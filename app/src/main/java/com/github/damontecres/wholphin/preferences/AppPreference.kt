@@ -860,6 +860,18 @@ sealed interface AppPreference<Pref, T> {
                 summaryOn = R.string.enabled,
                 summaryOff = R.string.disabled,
             )
+        val LiveTvProgramCategoryFilter =
+            AppChoicePreference<AppPreferences, ProgramCategoryFilter>(
+                title = R.string.filter_program_category,
+                defaultValue = ProgramCategoryFilter.CATEGORY_NONE,
+                displayValues = R.array.program_category_filters,
+                indexToValue = { index -> ProgramCategoryFilter.values()[index] },
+                valueToIndex = { value -> value.ordinal },
+                getter = { it.interfacePreferences.liveTvPreferences.programCategoryFilter },
+                setter = { prefs, value ->
+                    prefs.updateLiveTvPreferences { programCategoryFilter = value }
+                },
+            )
     }
 }
 
@@ -1031,6 +1043,7 @@ val liveTvPreferences =
         AppPreference.LiveTvFavoriteChannelsBeginning,
         AppPreference.LiveTvChannelSortByWatched,
         AppPreference.LiveTvColorCodePrograms,
+        AppPreference.LiveTvProgramCategoryFilter,
     )
 
 data class AppSwitchPreference<Pref>(
