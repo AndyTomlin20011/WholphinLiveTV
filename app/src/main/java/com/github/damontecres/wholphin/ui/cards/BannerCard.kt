@@ -57,12 +57,37 @@ fun BannerCard(
     played: Boolean = false,
     favorite: Boolean = false,
     playPercent: Double = 0.0,
+    cornerImageItemId: java.util.UUID? = null,
+    cornerImageType: ImageType = ImageType.LOGO,
     cardHeight: Dp = 120.dp,
     aspectRatio: Float = AspectRatios.WIDE,
     interactionSource: MutableInteractionSource? = null,
 ) {
     val imageUrlService = LocalImageUrlService.current
     val density = LocalDensity.current
+    val cornerImageUrl =
+        remember(cornerImageItemId, cornerImageType, cardHeight) {
+            cornerImageItemId?.let { id ->
+                val fillHeight =
+                    if (cardHeight != Dp.Unspecified) {
+                        with(density) {
+                            (cardHeight * .25f).roundToPx()
+                        }
+                    } else {
+                        null
+                    }
+                imageUrlService.getItemImageUrl(
+                    itemId = id,
+                    imageType = cornerImageType,
+                    fillHeight = fillHeight,
+                )
+                    ?: imageUrlService.getItemImageUrl(
+                        itemId = id,
+                        imageType = ImageType.PRIMARY,
+                        fillHeight = fillHeight,
+                    )
+            }
+        }
     val imageUrl =
         remember(item, cardHeight) {
             if (item != null) {
@@ -121,7 +146,7 @@ fun BannerCard(
                             .align(Alignment.Center),
                 )
             }
-            if (played || cornerText.isNotNullOrBlank()) {
+            if (played || cornerText.isNotNullOrBlank() || cornerImageUrl.isNotNullOrBlank()) {
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(4.dp),
                     verticalAlignment = Alignment.CenterVertically,
@@ -132,6 +157,26 @@ fun BannerCard(
                 ) {
                     if (played && (playPercent <= 0 || playPercent >= 100)) {
                         WatchedIcon(Modifier.size(24.dp))
+                    }
+                    if (cornerImageUrl.isNotNullOrBlank()) {
+                        Card(
+                            modifier = Modifier.size(56.dp, 32.dp),
+                            onClick = {},
+                            colors =
+                                CardDefaults.colors(
+                                    containerColor = AppColors.TransparentBlack50,
+                                ),
+                        ) {
+                            AsyncImage(
+                                model = cornerImageUrl,
+                                contentDescription = name,
+                                contentScale = ContentScale.Fit,
+                                modifier =
+                                    Modifier
+                                        .padding(6.dp)
+                                        .fillMaxSize(),
+                            )
+                        }
                     }
                     if (cornerText.isNotNullOrBlank()) {
                         Box(
