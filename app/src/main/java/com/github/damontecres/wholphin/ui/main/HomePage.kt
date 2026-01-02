@@ -370,7 +370,7 @@ fun HomePageContent(
                     PaddingValues(
                         start = 16.dp,
                         end = 16.dp,
-                        top = 0.dp,
+                        top = 24.dp,
                         bottom = Cards.height2x3,
                     ),
                 modifier =
@@ -469,6 +469,28 @@ fun HomePageContent(
                                                     -> true
 
                                                     else -> false
+                                                }
+                                            }
+                                        val rowCardOverlayText =
+                                            remember(item, isProgramItem) {
+                                                if (isProgramItem) {
+                                                    null
+                                                } else {
+                                                    item?.data?.indexNumber?.let { "E$it" }
+                                                        ?: item
+                                                            ?.data
+                                                            ?.userData
+                                                            ?.unplayedItemCount
+                                                              ?.takeIf { it > 0 }
+                                                              ?.let { abbreviateNumber(it) }
+                                                }
+                                            }
+                                        val rowCardOverlayLogoItemId =
+                                            remember(item, isProgramItem) {
+                                                if (isProgramItem) {
+                                                    item?.data?.channelId
+                                                } else {
+                                                    null
                                                 }
                                             }
                                         val rowCardOverlayText =
@@ -601,6 +623,9 @@ private fun HomeHeroCarousel(
             val availableSpace = maxWidth - heroWidth
             if (availableSpace > 0.dp) availableSpace / 2 else 0.dp
         }
+        val horizontalPaddingPx = remember(horizontalPadding, density) {
+            with(density) { horizontalPadding.roundToPx() }
+        }
         LazyRow(
             state = listState,
             horizontalArrangement = Arrangement.spacedBy(16.dp),
@@ -609,6 +634,7 @@ private fun HomeHeroCarousel(
         ) {
             itemsIndexed(items) { index, item ->
                 val requester = focusRequesters.getOrNull(index)
+                var isHeroCardFocused by remember { mutableStateOf(false) }
                 val logoUrl =
                     remember(item) {
                         imageUrlService.getItemImageUrl(
@@ -686,14 +712,19 @@ private fun HomeHeroCarousel(
                             }
                         }
                     },
+                    isFocused = isHeroCardFocused,
                     modifier =
                         Modifier
                             .focusRequester(if (index == 0) focusRequester else requester ?: focusRequester)
                             .onFocusChanged {
+                                isHeroCardFocused = it.isFocused
                                 if (it.isFocused) {
                                     onUpdateBackdrop(item)
                                     coroutineScope.launch {
-                                        listState.animateScrollToItem(index)
+                                        listState.animateScrollToItem(
+                                            index = index,
+                                            scrollOffset = -horizontalPaddingPx,
+                                        )
                                     }
                                 }
                             },

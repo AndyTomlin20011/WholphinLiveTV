@@ -1,6 +1,7 @@
 package com.github.damontecres.wholphin.ui.cards
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -21,6 +22,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.TileMode
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.colorResource
@@ -65,6 +69,8 @@ fun BannerCard(
     imageType: ImageType = ImageType.PRIMARY,
     overlayContent: (@Composable BoxScope.() -> Unit)? = null,
     interactionSource: MutableInteractionSource? = null,
+    focusedBorderShape: Shape = RoundedCornerShape(12.dp),
+    isFocused: Boolean = false,
 ) {
     val imageUrlService = LocalImageUrlService.current
     val density = LocalDensity.current
@@ -122,6 +128,26 @@ fun BannerCard(
             CardDefaults.colors(
 //                containerColor = Color.Transparent,
             ),
+        border =
+            if (isFocused) {
+                val baseColor = MaterialTheme.colorScheme.surface
+                val highlight =
+                    if (baseColor.luminance() > 0.5f) {
+                        baseColor.copy(alpha = 0.35f)
+                    } else {
+                        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.25f)
+                    }
+                BorderStroke(
+                    2.dp,
+                    Brush.linearGradient(
+                        colors = listOf(highlight, highlight.copy(alpha = 0.1f), highlight),
+                        tileMode = TileMode.Clamp,
+                    ),
+                )
+            } else {
+                null
+            },
+        shape = focusedBorderShape,
     ) {
         Box(
             modifier =
