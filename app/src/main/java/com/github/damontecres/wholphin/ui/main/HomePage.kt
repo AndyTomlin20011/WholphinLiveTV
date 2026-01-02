@@ -491,6 +491,14 @@ fun HomePageContent(
                                                     null
                                                 }
                                             }
+                                        val cornerLogoId =
+                                            remember(item, isProgramItem) {
+                                                if (isProgramItem) {
+                                                    item?.data?.channelId
+                                                } else {
+                                                    null
+                                                }
+                                            }
                                     val isProgramRow = row.items.firstOrNull()?.type == BaseItemKind.PROGRAM
                                     BannerCard(
                                             name = item?.data?.seriesName ?: item?.name,
@@ -589,7 +597,7 @@ private fun HomeHeroCarousel(
     val focusRequesters = remember(items.size) { List(items.size) { FocusRequester() } }
     val imageUrlService = LocalImageUrlService.current
     val density = LocalDensity.current
-    val gradientStartY = remember(cardHeight, density) { cardHeight.toPx() * 0.2f }
+    val gradientStartY = remember(cardHeight, density) { with(density) { cardHeight.toPx() * 0.2f } }
     LazyRow(
         horizontalArrangement = Arrangement.spacedBy(16.dp),
         contentPadding = PaddingValues(horizontal = 24.dp, vertical = 16.dp),

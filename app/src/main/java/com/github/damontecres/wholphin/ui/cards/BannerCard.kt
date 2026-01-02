@@ -63,7 +63,7 @@ fun BannerCard(
     cardHeight: Dp = 120.dp,
     aspectRatio: Float = AspectRatios.WIDE,
     imageType: ImageType = ImageType.PRIMARY,
-    overlayContent: (BoxScope.() -> Unit)? = null,
+    overlayContent: (@Composable BoxScope.() -> Unit)? = null,
     interactionSource: MutableInteractionSource? = null,
 ) {
     val imageUrlService = LocalImageUrlService.current
