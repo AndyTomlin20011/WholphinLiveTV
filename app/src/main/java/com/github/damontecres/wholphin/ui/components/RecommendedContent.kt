@@ -148,6 +148,7 @@ fun RecommendedContent(
 
         LoadingState.Success -> {
             HomePageContent(
+                heroItems = emptyList(),
                 homeRows = rows,
                 onClickItem = { _, item ->
                     viewModel.navigationManager.navigateTo(item.destination())
@@ -155,6 +156,8 @@ fun RecommendedContent(
                 onLongClickItem = { position, item ->
                     moreDialog.makePresent(RowColumnItem(position, item))
                 },
+                onClickHeroItem = {},
+                onLongClickHeroItem = {},
                 onClickPlay = { _, item ->
                     viewModel.navigationManager.navigateTo(Destination.Playback(item))
                 },

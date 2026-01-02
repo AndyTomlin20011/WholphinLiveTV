@@ -1,6 +1,7 @@
 package com.github.damontecres.wholphin.ui.main
 
 import android.widget.Toast
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
@@ -16,6 +17,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
@@ -24,7 +26,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -36,10 +38,12 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import org.jellyfin.sdk.model.api.ImageType
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.tv.material3.MaterialTheme
@@ -98,6 +102,7 @@ fun HomePage(
     val watchingRows by viewModel.watchingRows.observeAsState(listOf())
     val sportsRows by viewModel.sportsRows.observeAsState(listOf())
     val latestRows by viewModel.latestRows.observeAsState(listOf())
+    val heroItems by viewModel.heroItems.observeAsState(listOf())
     LaunchedEffect(loading) {
         val state = loading
         if (!firstLoad && state is LoadingState.Error) {
@@ -128,11 +133,46 @@ fun HomePage(
             var showPlaylistDialog by remember { mutableStateOf<UUID?>(null) }
             val playlistState by playlistViewModel.playlistState.observeAsState(PlaylistLoadingState.Pending)
             HomePageContent(
+                heroItems = heroItems,
                 watchingRows + sportsRows + latestRows,
                 onClickItem = { position, item ->
                     viewModel.navigationManager.navigateTo(item.destination())
                 },
                 onLongClickItem = { position, item ->
+                    val dialogItems =
+                        buildMoreDialogItemsForHome(
+                            context = context,
+                            item = item,
+                            seriesId = item.data.seriesId,
+                            playbackPosition = item.playbackPosition,
+                            watched = item.played,
+                            favorite = item.favorite,
+                            actions =
+                                MoreDialogActions(
+                                    navigateTo = viewModel.navigationManager::navigateTo,
+                                    onClickWatch = { itemId, played ->
+                                        viewModel.setWatched(itemId, played)
+                                    },
+                                    onClickFavorite = { itemId, favorite ->
+                                        viewModel.setFavorite(itemId, favorite)
+                                    },
+                                    onClickAddPlaylist = { itemId ->
+                                        playlistViewModel.loadPlaylists(MediaType.VIDEO)
+                                        showPlaylistDialog = itemId
+                                    },
+                                ),
+                        )
+                    dialog =
+                        DialogParams(
+                            title = item.title ?: "",
+                            fromLongClick = true,
+                            items = dialogItems,
+                        )
+                },
+                onClickHeroItem = { item ->
+                    viewModel.navigationManager.navigateTo(item.destination())
+                },
+                onLongClickHeroItem = { item ->
                     val dialogItems =
                         buildMoreDialogItemsForHome(
                             context = context,
@@ -212,9 +252,12 @@ fun HomePage(
 
 @Composable
 fun HomePageContent(
+    heroItems: List<BaseItem>,
     homeRows: List<HomeRowLoadingState>,
     onClickItem: (RowColumn, BaseItem) -> Unit,
     onLongClickItem: (RowColumn, BaseItem) -> Unit,
+    onClickHeroItem: (BaseItem) -> Unit,
+    onLongClickHeroItem: (BaseItem) -> Unit,
     onClickPlay: (RowColumn, BaseItem) -> Unit,
     showClock: Boolean,
     onUpdateBackdrop: (BaseItem) -> Unit,
@@ -223,7 +266,9 @@ fun HomePageContent(
     loadingState: LoadingState? = null,
 ) {
     val context = LocalContext.current
-    val scope = rememberCoroutineScope()
+    val density = LocalDensity.current
+    val heroCardHeight = Cards.height2x3 * 1.6f
+    val heroOffset = if (heroItems.isNotEmpty()) 1 else 0
     val firstRow =
         remember {
             homeRows
@@ -248,34 +293,58 @@ fun HomePageContent(
 
     val listState = rememberLazyListState()
     val rowFocusRequesters = remember(homeRows.size) { List(homeRows.size) { FocusRequester() } }
+    val heroFocusRequester = remember { FocusRequester() }
     var focused by rememberSaveable { mutableStateOf(false) }
-    LaunchedEffect(homeRows) {
-        if (!focused) {
-            homeRows
-                .indexOfFirst { it is HomeRowLoadingState.Success && it.items.isNotEmpty() }
-                .takeIf { it >= 0 }
-                ?.let {
-                    rowFocusRequesters[it].tryRequestFocus()
-                    delay(50)
-                    listState.animateScrollToItem(position.row)
-                    focused = true
+    val headerVisible by
+        remember(heroItems, listState.firstVisibleItemIndex, listState.firstVisibleItemScrollOffset) {
+            derivedStateOf {
+                if (heroItems.isEmpty()) {
+                    true
+                } else {
+                    listState.firstVisibleItemIndex > 0 ||
+                        listState.firstVisibleItemScrollOffset >
+                        with(density) { (heroCardHeight / 2).roundToPx() }
                 }
+            }
+        }
+    LaunchedEffect(homeRows, heroItems) {
+        if (!focused) {
+            if (heroItems.isNotEmpty()) {
+                heroFocusRequester.tryRequestFocus()
+                focused = true
+            } else {
+                homeRows
+                    .indexOfFirst { it is HomeRowLoadingState.Success && it.items.isNotEmpty() }
+                    .takeIf { it >= 0 }
+                    ?.let {
+                        rowFocusRequesters[it].tryRequestFocus()
+                        delay(50)
+                        val maxIndex = (listState.layoutInfo.totalItemsCount - 1).coerceAtLeast(0)
+                        val targetIndex = (position.row + heroOffset).coerceAtMost(maxIndex)
+                        listState.animateScrollToItem(targetIndex)
+                        focused = true
+                    }
+            }
         } else {
             rowFocusRequesters.getOrNull(position.row)?.tryRequestFocus()
         }
     }
-    LaunchedEffect(position) {
-        listState.animateScrollToItem(position.row)
+    LaunchedEffect(position, heroOffset, listState.layoutInfo.totalItemsCount) {
+        val targetIndex = position.row + heroOffset
+        val maxIndex = (listState.layoutInfo.totalItemsCount - 1).coerceAtLeast(0)
+        listState.animateScrollToItem(targetIndex.coerceAtMost(maxIndex))
     }
     Box(modifier = modifier) {
         Column(modifier = Modifier.fillMaxSize()) {
-            HomePageHeader(
-                item = focusedItem,
-                modifier =
-                    Modifier
-                        .padding(top = 48.dp, bottom = 32.dp, start = 32.dp)
-                        .fillMaxHeight(.33f),
-            )
+            AnimatedVisibility(visible = headerVisible) {
+                HomePageHeader(
+                    item = focusedItem,
+                    modifier =
+                        Modifier
+                            .padding(top = 48.dp, bottom = 24.dp, start = 32.dp, end = 32.dp)
+                            .fillMaxHeight(.33f),
+                )
+            }
             LazyColumn(
                 state = listState,
                 verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -290,6 +359,19 @@ fun HomePageContent(
                     Modifier
                         .focusRestorer(),
             ) {
+                if (heroItems.isNotEmpty()) {
+                    item {
+                        HomeHeroCarousel(
+                            items = heroItems,
+                            onClick = onClickHeroItem,
+                            onLongClick = onLongClickHeroItem,
+                            onUpdateBackdrop = onUpdateBackdrop,
+                            focusRequester = heroFocusRequester,
+                            cardHeight = heroCardHeight,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    }
+                }
                 itemsIndexed(homeRows) { rowIndex, row ->
                     when (val r = row) {
                         is HomeRowLoadingState.Loading,
@@ -474,6 +556,47 @@ fun HomePageContent(
             }
 
             else -> {}
+        }
+    }
+}
+
+@Composable
+private fun HomeHeroCarousel(
+    items: List<BaseItem>,
+    onClick: (BaseItem) -> Unit,
+    onLongClick: (BaseItem) -> Unit,
+    onUpdateBackdrop: (BaseItem) -> Unit,
+    focusRequester: FocusRequester,
+    modifier: Modifier = Modifier,
+    cardHeight: Dp = 220.dp,
+) {
+    val focusRequesters = remember(items.size) { List(items.size) { FocusRequester() } }
+    LazyRow(
+        horizontalArrangement = Arrangement.spacedBy(16.dp),
+        contentPadding = PaddingValues(horizontal = 24.dp, vertical = 16.dp),
+        modifier = modifier,
+    ) {
+        itemsIndexed(items) { index, item ->
+            val requester = focusRequesters.getOrNull(index)
+            BannerCard(
+                name = item.data.seriesName ?: item.name,
+                item = item,
+                onClick = { onClick(item) },
+                onLongClick = { onLongClick(item) },
+                played = item.data.userData?.played ?: false,
+                favorite = item.favorite ?: false,
+                playPercent = item.data.userData?.playedPercentage ?: 0.0,
+                cardHeight = cardHeight,
+                aspectRatio = AspectRatios.WIDE,
+                modifier =
+                    Modifier
+                        .focusRequester(if (index == 0) focusRequester else requester ?: focusRequester)
+                        .onFocusChanged {
+                            if (it.isFocused) {
+                                onUpdateBackdrop(item)
+                            }
+                        },
+            )
         }
     }
 }
