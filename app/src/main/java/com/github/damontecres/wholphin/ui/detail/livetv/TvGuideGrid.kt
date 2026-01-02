@@ -8,10 +8,14 @@ import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
@@ -39,15 +43,21 @@ import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.annotation.StringRes
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Surface
 import androidx.tv.material3.SurfaceDefaults
 import androidx.tv.material3.Text
+import androidx.tv.material3.Button
+import androidx.tv.material3.ButtonDefaults
+import androidx.tv.material3.surfaceColorAtElevation
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.LiveTvPreferences
+import com.github.damontecres.wholphin.preferences.ProgramCategoryFilter
 import com.github.damontecres.wholphin.ui.components.CircularProgress
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.ExpandableFaButton
@@ -140,6 +150,19 @@ fun TvGuideGrid(
                                     .fillMaxHeight(.30f),
                         )
                     }
+                    val selectedFilter =
+                        tvPrefs.programCategoryFilter
+                            .takeUnless { it == ProgramCategoryFilter.UNRECOGNIZED }
+                            ?: ProgramCategoryFilter.CATEGORY_NONE
+                    ProgramCategoryFilterRow(
+                        selectedFilter = selectedFilter,
+                        onSelectFilter = viewModel::setProgramCategoryFilter,
+                        downFocusRequester = focusRequester,
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(start = 24.dp, end = 24.dp, bottom = 4.dp),
+                    )
                     AnimatedVisibility(focusedPosition.row < 1) {
                         ExpandableFaButton(
                             title = R.string.view_options,
@@ -257,6 +280,73 @@ fun TvGuideGrid(
         )
     }
 }
+
+@Composable
+private fun ProgramCategoryFilterRow(
+    selectedFilter: ProgramCategoryFilter,
+    onSelectFilter: (ProgramCategoryFilter) -> Unit,
+    downFocusRequester: FocusRequester,
+    modifier: Modifier = Modifier,
+) {
+    val filters =
+        remember {
+            ProgramCategoryFilter
+                .values()
+                .filter { it != ProgramCategoryFilter.UNRECOGNIZED }
+        }
+    Column(
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = modifier,
+    ) {
+        Text(
+            text = stringResource(R.string.live_tv_categories),
+            style = MaterialTheme.typography.titleSmall,
+        )
+        LazyRow(
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            items(filters) { filter ->
+                val selected = filter == selectedFilter
+                Button(
+                    onClick = { onSelectFilter(filter) },
+                    shape = RoundedCornerShape(16.dp),
+                    colors =
+                        ButtonDefaults.colors(
+                            containerColor =
+                                if (selected) {
+                                    MaterialTheme.colorScheme.primary
+                                } else {
+                                    MaterialTheme.colorScheme.surfaceColorAtElevation(2.dp)
+                                },
+                            contentColor =
+                                if (selected) {
+                                    MaterialTheme.colorScheme.onPrimary
+                                } else {
+                                    MaterialTheme.colorScheme.onSurface
+                                },
+                        ),
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 10.dp),
+                    modifier =
+                        Modifier
+                            .focusProperties { down = downFocusRequester },
+                ) {
+                    Text(text = stringResource(filter.toLabelRes()))
+                }
+            }
+        }
+    }
+}
+
+@StringRes
+private fun ProgramCategoryFilter.toLabelRes(): Int =
+    when (this) {
+        ProgramCategoryFilter.CATEGORY_NONE -> R.string.program_category_all
+        ProgramCategoryFilter.CATEGORY_KIDS -> R.string.program_category_kids
+        ProgramCategoryFilter.CATEGORY_MOVIE -> R.string.program_category_movies
+        ProgramCategoryFilter.CATEGORY_NEWS -> R.string.program_category_news
+        ProgramCategoryFilter.CATEGORY_SPORTS -> R.string.program_category_sports
+        ProgramCategoryFilter.UNRECOGNIZED -> R.string.program_category_all
+    }
 
 val tvGuideDimensions =
     ProgramGuideDimensions(

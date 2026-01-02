@@ -501,6 +501,19 @@ class LiveTvViewModel
 
         private var focusLoadingJob: Job? = null
 
+        fun setProgramCategoryFilter(filter: ProgramCategoryFilter) {
+            val selectedFilter =
+                filter.takeUnless { it == ProgramCategoryFilter.UNRECOGNIZED }
+                    ?: ProgramCategoryFilter.CATEGORY_NONE
+            viewModelScope.launchIO {
+                preferences.updateData {
+                    it.updateLiveTvPreferences {
+                        programCategoryFilter = selectedFilter
+                    }
+                }
+            }
+        }
+
         fun onFocusChannel(position: RowColumn) {
             channels.value?.let { channels ->
                 val fetchedRange = programs.value!!.range
