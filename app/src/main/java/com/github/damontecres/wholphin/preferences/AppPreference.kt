@@ -866,20 +866,16 @@ sealed interface AppPreference<Pref, T> {
                 defaultValue = ProgramCategoryFilter.CATEGORY_NONE,
                 displayValues = R.array.program_category_filters,
                 indexToValue = { index ->
-                    ProgramCategoryFilter.forNumber(index) ?: ProgramCategoryFilter.CATEGORY_NONE
-                },
-                valueToIndex = { value ->
-                    if (value != ProgramCategoryFilter.UNRECOGNIZED) value.number else 0
-                },
-                    ProgramCategoryFilter.values().getOrNull(index)
+                    ProgramCategoryFilter.forNumber(index)
                         ?: ProgramCategoryFilter.CATEGORY_NONE
                 },
                 valueToIndex = { value ->
-                    if (value != ProgramCategoryFilter.UNRECOGNIZED) value.ordinal else 0
+                    value.takeUnless { it == ProgramCategoryFilter.UNRECOGNIZED }?.number
+                        ?: ProgramCategoryFilter.CATEGORY_NONE.number
                 },
-                indexToValue = { index -> ProgramCategoryFilter.values()[index] },
-                valueToIndex = { value -> value.ordinal },
-                getter = { it.interfacePreferences.liveTvPreferences.programCategoryFilter },
+                getter = {
+                    it.interfacePreferences.liveTvPreferences.programCategoryFilter
+                },
                 setter = { prefs, value ->
                     prefs.updateLiveTvPreferences { programCategoryFilter = value }
                 },
