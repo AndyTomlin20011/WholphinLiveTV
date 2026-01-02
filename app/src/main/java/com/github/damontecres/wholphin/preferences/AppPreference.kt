@@ -871,6 +871,14 @@ sealed interface AppPreference<Pref, T> {
                 valueToIndex = { value ->
                     if (value != ProgramCategoryFilter.UNRECOGNIZED) value.number else 0
                 },
+                    ProgramCategoryFilter.values().getOrNull(index)
+                        ?: ProgramCategoryFilter.CATEGORY_NONE
+                },
+                valueToIndex = { value ->
+                    if (value != ProgramCategoryFilter.UNRECOGNIZED) value.ordinal else 0
+                },
+                indexToValue = { index -> ProgramCategoryFilter.values()[index] },
+                valueToIndex = { value -> value.ordinal },
                 getter = { it.interfacePreferences.liveTvPreferences.programCategoryFilter },
                 setter = { prefs, value ->
                     prefs.updateLiveTvPreferences { programCategoryFilter = value }
