@@ -57,20 +57,39 @@ fun BannerCard(
     played: Boolean = false,
     favorite: Boolean = false,
     playPercent: Double = 0.0,
+    cornerImageItemId: java.util.UUID? = null,
+    cornerImageType: ImageType = ImageType.LOGO,
     cardHeight: Dp = 120.dp,
     aspectRatio: Float = AspectRatios.WIDE,
     interactionSource: MutableInteractionSource? = null,
 ) {
     val imageUrlService = LocalImageUrlService.current
     val density = LocalDensity.current
+    val cornerImageUrl =
+        remember(cornerImageItemId, cornerImageType, density) {
+            cornerImageItemId?.let { id ->
+                val targetWidth = with(density) { 56.dp.roundToPx() }
+                val targetHeight = with(density) { 32.dp.roundToPx() }
+                imageUrlService.getItemImageUrl(
+                    itemId = id,
+                    imageType = cornerImageType,
+                    maxWidth = targetWidth,
+                    maxHeight = targetHeight,
+                )
+                    ?: imageUrlService.getItemImageUrl(
+                        itemId = id,
+                        imageType = ImageType.PRIMARY,
+                        maxWidth = targetWidth,
+                        maxHeight = targetHeight,
+                    )
+            }
+        }
     val imageUrl =
-        remember(item, cardHeight) {
+        remember(item, cardHeight, density) {
             if (item != null) {
                 val fillHeight =
                     if (cardHeight != Dp.Unspecified) {
-                        with(density) {
-                            cardHeight.roundToPx()
-                        }
+                        with(density) { cardHeight.roundToPx() }
                     } else {
                         null
                     }
@@ -121,7 +140,7 @@ fun BannerCard(
                             .align(Alignment.Center),
                 )
             }
-            if (played || cornerText.isNotNullOrBlank()) {
+            if (played || cornerText.isNotNullOrBlank() || cornerImageUrl.isNotNullOrBlank()) {
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(4.dp),
                     verticalAlignment = Alignment.CenterVertically,
@@ -132,6 +151,22 @@ fun BannerCard(
                 ) {
                     if (played && (playPercent <= 0 || playPercent >= 100)) {
                         WatchedIcon(Modifier.size(24.dp))
+                    }
+                    if (cornerImageUrl.isNotNullOrBlank()) {
+                        Box(
+                            modifier =
+                                Modifier
+                                    .size(56.dp, 32.dp)
+                                    .clip(RoundedCornerShape(6.dp))
+                                    .background(AppColors.TransparentBlack50),
+                        ) {
+                            AsyncImage(
+                                model = cornerImageUrl,
+                                contentDescription = name,
+                                contentScale = ContentScale.Fit,
+                                modifier = Modifier.fillMaxSize().padding(6.dp),
+                            )
+                        }
                     }
                     if (cornerText.isNotNullOrBlank()) {
                         Box(
