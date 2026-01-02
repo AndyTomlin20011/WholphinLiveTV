@@ -359,20 +359,10 @@ fun HomePageContent(
                                             .focusRequester(rowFocusRequesters[rowIndex])
                                             .animateItem(),
                                     cardContent = { index, item, cardModifier, onClick, onLongClick ->
-                                        val isProgramItem =
-                                            remember(item) {
-                                                when (item?.type) {
-                                                    BaseItemKind.PROGRAM,
-                                                    BaseItemKind.TV_PROGRAM,
-                                                    BaseItemKind.LIVE_TV_PROGRAM,
-                                                    -> true
-
-                                                    else -> false
-                                                }
-                                            }
+                                        val isProgramRow = row.items.firstOrNull()?.type == BaseItemKind.PROGRAM
                                         val cornerText =
-                                            remember(item, isProgramItem) {
-                                                if (isProgramItem) {
+                                            remember(item) {
+                                                if (isProgramRow) {
                                                     null
                                                 } else {
                                                     item?.data?.indexNumber?.let { "E$it" }
@@ -384,25 +374,23 @@ fun HomePageContent(
                                                             ?.let { abbreviateNumber(it) }
                                                 }
                                             }
-                                        val cornerLogoId =
-                                            remember(item, isProgramItem) {
-                                                if (isProgramItem) {
-                                                    item?.data?.channelId
-                                                } else {
-                                                    null
-                                                }
-                                            }
-                                        BannerCard(
+                                    val isProgramRow = row.items.firstOrNull()?.type == BaseItemKind.PROGRAM
+                                    BannerCard(
                                             name = item?.data?.seriesName ?: item?.name,
                                             item = item,
                                             aspectRatio =
-                                                if (isProgramItem) {
+                                                if (isProgramRow) {
                                                     AspectRatios.WIDE
                                                 } else {
                                                     AspectRatios.TALL
                                                 },
                                             cornerText = cornerText,
-                                            cornerImageItemId = cornerLogoId,
+                                            cornerImageItemId =
+                                                if (isProgramRow) {
+                                                    item?.data?.channelId
+                                                } else {
+                                                    null
+                                                },
                                             played = item?.data?.userData?.played ?: false,
                                             favorite = item?.favorite ?: false,
                                             playPercent =
