@@ -469,7 +469,7 @@ fun HomePageContent(
                                                     else -> false
                                                 }
                                             }
-                                        val cornerText =
+                                        val cardCornerText =
                                             remember(item, isProgramItem) {
                                                 if (isProgramItem) {
                                                     null
@@ -479,41 +479,11 @@ fun HomePageContent(
                                                             ?.data
                                                             ?.userData
                                                             ?.unplayedItemCount
-                                                            ?.takeIf { it > 0 }
-                                                            ?.let { abbreviateNumber(it) }
+                                                              ?.takeIf { it > 0 }
+                                                              ?.let { abbreviateNumber(it) }
                                                 }
                                             }
-                                        val cornerLogoItemId =
-                                            remember(item, isProgramItem) {
-                                                if (isProgramItem) {
-                                                    item?.data?.channelId
-                                                } else {
-                                                    null
-                                                }
-                                            }
-                                        val cornerText =
-                                            remember(item, isProgramItem) {
-                                                if (isProgramItem) {
-                                                    null
-                                                } else {
-                                                    item?.data?.indexNumber?.let { "E$it" }
-                                                        ?: item
-                                                            ?.data
-                                                            ?.userData
-                                                            ?.unplayedItemCount
-                                                            ?.takeIf { it > 0 }
-                                                            ?.let { abbreviateNumber(it) }
-                                                }
-                                            }
-                                        val cornerLogoId =
-                                            remember(item, isProgramItem) {
-                                                if (isProgramItem) {
-                                                    item?.data?.channelId
-                                                } else {
-                                                    null
-                                                }
-                                            }
-                                        val cornerLogoId =
+                                        val cardCornerLogoItemId =
                                             remember(item, isProgramItem) {
                                                 if (isProgramItem) {
                                                     item?.data?.channelId
@@ -531,8 +501,8 @@ fun HomePageContent(
                                                 } else {
                                                     AspectRatios.TALL
                                                 },
-                                            cornerText = cornerText,
-                                            cornerImageItemId = cornerLogoItemId,
+                                            cornerText = cardCornerText,
+                                            cornerImageItemId = cardCornerLogoItemId,
                                             cornerImageType =
                                                 if (isProgramItem) {
                                                     ImageType.PRIMARY
