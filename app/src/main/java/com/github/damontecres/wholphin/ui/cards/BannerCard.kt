@@ -2,7 +2,7 @@ package com.github.damontecres.wholphin.ui.cards
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.border
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -131,28 +131,7 @@ fun BannerCard(
             CardDefaults.colors(
 //                containerColor = Color.Transparent,
             ),
-        border =
-            CardDefaults.cardBorder(
-                focusedBorder =
-                    if (isFocused) {
-                        val baseColor = MaterialTheme.colorScheme.surface
-                        val highlight =
-                            if (baseColor.luminance() > 0.5f) {
-                                baseColor.copy(alpha = 0.35f)
-                            } else {
-                                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.25f)
-                            }
-                        BorderStroke(
-                            2.dp,
-                            Brush.linearGradient(
-                                colors = listOf(highlight, highlight.copy(alpha = 0.1f), highlight),
-                                tileMode = TileMode.Clamp,
-                            ),
-                        )
-                    } else {
-                        null
-                    },
-            ),
+        border = null,
         shape = CardDefaults.shape(focusedBorderShape),
     ) {
         Box(
@@ -227,6 +206,34 @@ fun BannerCard(
                         }
                     }
                 }
+            }
+            if (isFocused) {
+                val baseColor = MaterialTheme.colorScheme.surface
+                val highlight =
+                    if (baseColor.luminance() > 0.5f) {
+                        baseColor.copy(alpha = 0.35f)
+                    } else {
+                        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.25f)
+                    }
+                Box(
+                    modifier =
+                        Modifier
+                            .matchParentSize()
+                            .border(
+                                width = 2.dp,
+                                brush =
+                                    Brush.linearGradient(
+                                        colors =
+                                            listOf(
+                                                highlight,
+                                                highlight.copy(alpha = 0.1f),
+                                                highlight,
+                                            ),
+                                        tileMode = TileMode.Clamp,
+                                    ),
+                                shape = focusedBorderShape,
+                            ),
+                )
             }
             if (favorite) {
                 Text(
