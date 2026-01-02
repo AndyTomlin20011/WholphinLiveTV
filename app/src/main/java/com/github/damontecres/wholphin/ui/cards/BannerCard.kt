@@ -131,7 +131,6 @@ fun BannerCard(
             CardDefaults.colors(
 //                containerColor = Color.Transparent,
             ),
-        border = null,
         shape = CardDefaults.shape(focusedBorderShape),
     ) {
         Box(
