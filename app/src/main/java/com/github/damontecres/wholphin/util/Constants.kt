@@ -18,6 +18,7 @@ val supportItemKinds =
         BaseItemKind.TV_PROGRAM,
         BaseItemKind.LIVE_TV_CHANNEL,
         BaseItemKind.LIVE_TV_PROGRAM,
+        BaseItemKind.PROGRAM,
         BaseItemKind.RECORDING,
     )
 
@@ -41,5 +42,6 @@ val supportedPlayableTypes =
         BaseItemKind.VIDEO,
         BaseItemKind.TV_CHANNEL,
         BaseItemKind.TV_PROGRAM,
+        BaseItemKind.PROGRAM,
         BaseItemKind.RECORDING,
     )
