@@ -133,7 +133,7 @@ fun BannerCard(
                 AsyncImage(
                     model = imageUrl,
                     contentDescription = null,
-                    contentScale = ContentScale.FillBounds,
+                    contentScale = ContentScale.Crop,
                     onError = { imageError = true },
                     modifier = Modifier.fillMaxSize(),
                 )

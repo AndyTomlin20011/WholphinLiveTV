@@ -6,6 +6,7 @@ import androidx.compose.foundation.focusable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
@@ -27,6 +28,7 @@ import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -37,7 +39,6 @@ import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.platform.LocalContext
@@ -84,6 +85,7 @@ import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.ui.AppColors
 import com.github.damontecres.wholphin.util.HomeRowLoadingState
 import com.github.damontecres.wholphin.util.LoadingState
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.delay
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.MediaType
@@ -491,6 +493,14 @@ fun HomePageContent(
                                                     null
                                                 }
                                             }
+                                        val cardCornerLogoItemId =
+                                            remember(item, isProgramItem) {
+                                                if (isProgramItem) {
+                                                    item?.data?.channelId
+                                                } else {
+                                                    null
+                                                }
+                                            }
                                     val isProgramRow = row.items.firstOrNull()?.type == BaseItemKind.PROGRAM
                                     BannerCard(
                                             name = item?.data?.seriesName ?: item?.name,
@@ -584,105 +594,119 @@ private fun HomeHeroCarousel(
     onUpdateBackdrop: (BaseItem) -> Unit,
     focusRequester: FocusRequester,
     modifier: Modifier = Modifier,
-    cardHeight: Dp = 260.dp,
+    cardHeight: Dp = 280.dp,
 ) {
     val focusRequesters = remember(items.size) { List(items.size) { FocusRequester() } }
+    val listState = rememberLazyListState()
+    val coroutineScope = rememberCoroutineScope()
     val imageUrlService = LocalImageUrlService.current
     val density = LocalDensity.current
+    val heroAspectRatio = 16f / 9f
     val gradientStartY = remember(cardHeight, density) { with(density) { cardHeight.toPx() * 0.2f } }
-    LazyRow(
-        horizontalArrangement = Arrangement.spacedBy(16.dp),
-        contentPadding = PaddingValues(horizontal = 24.dp, vertical = 16.dp),
-        modifier = modifier,
-    ) {
-        itemsIndexed(items) { index, item ->
-            val requester = focusRequesters.getOrNull(index)
-            val logoUrl =
-                remember(item) {
-                    imageUrlService.getItemImageUrl(
-                        itemId = item.id,
-                        imageType = ImageType.LOGO,
-                        maxWidth = 480,
-                        maxHeight = 180,
-                    )
-                        ?: imageUrlService.getItemImageUrl(
+    BoxWithConstraints(modifier = modifier) {
+        val heroWidth = remember(cardHeight) { cardHeight * heroAspectRatio }
+        val horizontalPadding = remember(maxWidth, heroWidth) {
+            val availableSpace = maxWidth - heroWidth
+            if (availableSpace > 0.dp) availableSpace / 2 else 0.dp
+        }
+        LazyRow(
+            state = listState,
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            contentPadding = PaddingValues(horizontal = horizontalPadding, vertical = 16.dp),
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            itemsIndexed(items) { index, item ->
+                val requester = focusRequesters.getOrNull(index)
+                val logoUrl =
+                    remember(item) {
+                        imageUrlService.getItemImageUrl(
                             itemId = item.id,
-                            imageType = ImageType.PRIMARY,
-                            maxHeight = 180,
+                            imageType = ImageType.LOGO,
                             maxWidth = 480,
+                            maxHeight = 180,
                         )
-                }
-            BannerCard(
-                name = item.data.seriesName ?: item.name,
-                item = item,
-                imageType = ImageType.BACKDROP,
-                onClick = { onClick(item) },
-                onLongClick = { onLongClick(item) },
-                played = item.data.userData?.played ?: false,
-                favorite = item.favorite ?: false,
-                playPercent = item.data.userData?.playedPercentage ?: 0.0,
-                cardHeight = cardHeight,
-                aspectRatio = 2.4f,
-                overlayContent = {
-                    Box(
-                        modifier =
-                            Modifier
-                                .fillMaxSize()
-                                .background(
-                                    Brush.verticalGradient(
-                                        colors =
-                                            listOf(
-                                                Color.Transparent,
-                                                AppColors.TransparentBlack75,
-                                            ),
-                                        startY = gradientStartY,
-                                    ),
-                                ),
-                    )
-                    Column(
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
-                        modifier =
-                            Modifier
-                                .align(Alignment.BottomStart)
-                                .padding(20.dp)
-                                .fillMaxWidth(.65f),
-                    ) {
-                        if (logoUrl != null) {
-                            AsyncImage(
-                                model = logoUrl,
-                                contentDescription = item.name,
-                                contentScale = ContentScale.Fit,
-                                modifier = Modifier.height(64.dp),
+                            ?: imageUrlService.getItemImageUrl(
+                                itemId = item.id,
+                                imageType = ImageType.PRIMARY,
+                                maxHeight = 180,
+                                maxWidth = 480,
                             )
-                        } else {
-                            Text(
-                                text = item.title ?: "",
-                                style = MaterialTheme.typography.headlineMedium,
-                                color = MaterialTheme.colorScheme.onSurface,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                            )
-                        }
-                        item.data.overview?.takeIf { it.isNotBlank() }?.let { overview ->
-                            Text(
-                                text = overview,
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = MaterialTheme.colorScheme.onSurface,
-                                maxLines = 2,
-                                overflow = TextOverflow.Ellipsis,
-                            )
-                        }
                     }
-                },
-                modifier =
-                    Modifier
-                        .focusRequester(if (index == 0) focusRequester else requester ?: focusRequester)
-                        .onFocusChanged {
-                            if (it.isFocused) {
-                                onUpdateBackdrop(item)
+                BannerCard(
+                    name = item.data.seriesName ?: item.name,
+                    item = item,
+                    imageType = ImageType.BACKDROP,
+                    onClick = { onClick(item) },
+                    onLongClick = { onLongClick(item) },
+                    played = item.data.userData?.played ?: false,
+                    favorite = item.favorite ?: false,
+                    playPercent = item.data.userData?.playedPercentage ?: 0.0,
+                    cardHeight = cardHeight,
+                    aspectRatio = heroAspectRatio,
+                    overlayContent = {
+                        Box(
+                            modifier =
+                                Modifier
+                                    .fillMaxSize()
+                                    .background(
+                                        Brush.verticalGradient(
+                                            colors =
+                                                listOf(
+                                                    Color.Transparent,
+                                                    AppColors.TransparentBlack75,
+                                                ),
+                                            startY = gradientStartY,
+                                        ),
+                                    ),
+                        )
+                        Column(
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier =
+                                Modifier
+                                    .align(Alignment.BottomStart)
+                                    .padding(20.dp)
+                                    .fillMaxWidth(.65f),
+                        ) {
+                            if (logoUrl != null) {
+                                AsyncImage(
+                                    model = logoUrl,
+                                    contentDescription = item.name,
+                                    contentScale = ContentScale.Fit,
+                                    modifier = Modifier.height(64.dp),
+                                )
+                            } else {
+                                Text(
+                                    text = item.title ?: "",
+                                    style = MaterialTheme.typography.headlineMedium,
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                )
                             }
-                        },
-            )
+                            item.data.overview?.takeIf { it.isNotBlank() }?.let { overview ->
+                                Text(
+                                    text = overview,
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                    maxLines = 2,
+                                    overflow = TextOverflow.Ellipsis,
+                                )
+                            }
+                        }
+                    },
+                    modifier =
+                        Modifier
+                            .focusRequester(if (index == 0) focusRequester else requester ?: focusRequester)
+                            .onFocusChanged {
+                                if (it.isFocused) {
+                                    onUpdateBackdrop(item)
+                                    coroutineScope.launch {
+                                        listState.animateScrollToItem(index)
+                                    }
+                                }
+                            },
+                )
+            }
         }
     }
 }
