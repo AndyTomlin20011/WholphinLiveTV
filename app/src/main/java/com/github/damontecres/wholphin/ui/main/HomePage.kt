@@ -359,15 +359,20 @@ fun HomePageContent(
                                             .focusRequester(rowFocusRequesters[rowIndex])
                                             .animateItem(),
                                     cardContent = { index, item, cardModifier, onClick, onLongClick ->
+                                        val isProgramRow = row.items.firstOrNull()?.type == BaseItemKind.PROGRAM
                                         val cornerText =
                                             remember(item) {
-                                                item?.data?.indexNumber?.let { "E$it" }
-                                                    ?: item
-                                                        ?.data
-                                                        ?.userData
-                                                        ?.unplayedItemCount
-                                                        ?.takeIf { it > 0 }
-                                                        ?.let { abbreviateNumber(it) }
+                                                if (isProgramRow) {
+                                                    null
+                                                } else {
+                                                    item?.data?.indexNumber?.let { "E$it" }
+                                                        ?: item
+                                                            ?.data
+                                                            ?.userData
+                                                            ?.unplayedItemCount
+                                                            ?.takeIf { it > 0 }
+                                                            ?.let { abbreviateNumber(it) }
+                                                }
                                             }
                                     val isProgramRow = row.items.firstOrNull()?.type == BaseItemKind.PROGRAM
                                     BannerCard(
@@ -380,6 +385,12 @@ fun HomePageContent(
                                                     AspectRatios.TALL
                                                 },
                                             cornerText = cornerText,
+                                            cornerImageItemId =
+                                                if (isProgramRow) {
+                                                    item?.data?.channelId
+                                                } else {
+                                                    null
+                                                },
                                             played = item?.data?.userData?.played ?: false,
                                             favorite = item?.favorite ?: false,
                                             playPercent =
