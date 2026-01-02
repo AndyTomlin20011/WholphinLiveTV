@@ -112,6 +112,8 @@ class AppPreferencesSerializer
                                                 AppPreference.LiveTvChannelSortByWatched.defaultValue
                                             colorCodePrograms =
                                                 AppPreference.LiveTvColorCodePrograms.defaultValue
+                                            programCategoryFilter =
+                                                ProgramCategoryFilter.CATEGORY_NONE
                                         }.build()
                             }.build()
 
