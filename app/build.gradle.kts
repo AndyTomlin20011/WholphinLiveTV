@@ -21,17 +21,25 @@ val isCI = if (System.getenv("CI") != null) System.getenv("CI").toBoolean() else
 val shouldSign = isCI && System.getenv("KEY_ALIAS") != null
 val ffmpegModuleExists = project.file("libs/lib-decoder-ffmpeg-release.aar").exists()
 
-val gitTags =
-    providers
-        .exec { commandLine("git", "tag", "--list", "v*", "p*") }
-        .standardOutput.asText
-        .get()
+val gitTags = providers.provider {
+    runCatching {
+        providers
+            .exec { commandLine("git", "tag", "--list", "v*", "p*") }
+            .standardOutput.asText
+            .get()
+            .trim()
+    }.getOrDefault("")
+}
 
-val gitDescribe =
-    providers
-        .exec { commandLine("git", "describe", "--tags", "--long", "--match=v*") }
-        .standardOutput.asText
-        .getOrElse("v0.0.0")
+val gitDescribe = providers.provider {
+    runCatching {
+        providers
+            .exec { commandLine("git", "describe", "--tags", "--long", "--match=v*") }
+            .standardOutput.asText
+            .get()
+            .trim()
+    }.getOrDefault("v0.0.0")
+}
 
 android {
     namespace = "com.github.damontecres.wholphin"
@@ -41,8 +49,14 @@ android {
         applicationId = "com.github.damontecres.wholphin"
         minSdk = 23
         targetSdk = 36
-        versionCode = gitTags.trim().lines().size
-        versionName = gitDescribe.trim().removePrefix("v").ifBlank { "0.0.0" }
+        versionCode =
+            gitTags
+                .map { tags ->
+                    val count = tags.lineSequence().filter { it.isNotBlank() }.count()
+                    if (count == 0) 1 else count
+                }
+                .get()
+        versionName = gitDescribe.map { it.removePrefix("v").ifBlank { "0.0.0" } }.get()
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 

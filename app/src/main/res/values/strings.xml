@@ -396,6 +396,12 @@
     <string name="favorite_channels_at_beginning">Show favorite channels first</string>
     <string name="sort_channels_recently_watched">Sort channels by recently watched</string>
     <string name="color_code_programs">Color-code programs</string>
+    <string name="filter_program_category">Filter channels by category</string>
+    <string name="program_category_all">All categories</string>
+    <string name="program_category_kids">Kids</string>
+    <string name="program_category_movies">Movies</string>
+    <string name="program_category_news">News</string>
+    <string name="program_category_sports">Sports</string>
     <string name="subtitle_delay">Subtitle delay</string>
     <string name="backdrop_display">Backdrop style</string>
     <string name="resolution_switching">Resolution switching</string>
@@ -416,6 +422,14 @@
         <item>Orange</item>
         <item>Bold Blue</item>
         <item>Black</item>
+    </string-array>
+
+    <string-array name="program_category_filters">
+        <item>@string/program_category_all</item>
+        <item>@string/program_category_kids</item>
+        <item>@string/program_category_movies</item>
+        <item>@string/program_category_news</item>
+        <item>@string/program_category_sports</item>
     </string-array>
 
     <string-array name="skip_behaviors">
