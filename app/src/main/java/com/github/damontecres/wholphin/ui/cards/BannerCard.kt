@@ -159,21 +159,18 @@ fun BannerCard(
                         WatchedIcon(Modifier.size(24.dp))
                     }
                     if (cornerImageUrl.isNotNullOrBlank()) {
-                        Card(
-                            modifier = Modifier.size(56.dp, 32.dp),
-                            colors =
-                                CardDefaults.colors(
-                                    containerColor = AppColors.TransparentBlack50,
-                                ),
+                        Box(
+                            modifier =
+                                Modifier
+                                    .size(56.dp, 32.dp)
+                                    .clip(RoundedCornerShape(6.dp))
+                                    .background(AppColors.TransparentBlack50),
                         ) {
                             AsyncImage(
                                 model = cornerImageUrl,
                                 contentDescription = name,
                                 contentScale = ContentScale.Fit,
-                                modifier =
-                                    Modifier
-                                        .padding(6.dp)
-                                        .fillMaxSize(),
+                                modifier = Modifier.fillMaxSize().padding(6.dp),
                             )
                         }
                     }
