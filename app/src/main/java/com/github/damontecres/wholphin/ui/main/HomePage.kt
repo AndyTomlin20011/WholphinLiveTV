@@ -491,7 +491,16 @@ fun HomePageContent(
                                                     null
                                                 }
                                             }
-                                        BannerCard(
+                                        val cornerLogoId =
+                                            remember(item, isProgramItem) {
+                                                if (isProgramItem) {
+                                                    item?.data?.channelId
+                                                } else {
+                                                    null
+                                                }
+                                            }
+                                    val isProgramRow = row.items.firstOrNull()?.type == BaseItemKind.PROGRAM
+                                    BannerCard(
                                             name = item?.data?.seriesName ?: item?.name,
                                             item = item,
                                             aspectRatio =
