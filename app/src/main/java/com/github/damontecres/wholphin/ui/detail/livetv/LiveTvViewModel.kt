@@ -566,8 +566,7 @@ class LiveTvViewModel
                 ProgramCategoryFilter.CATEGORY_SPORTS ->
                     filterProgramsByCategory(programsByChannel, ProgramCategory.SPORTS)
 
-                ProgramCategoryFilter.CATEGORY_NONE, ProgramCategoryFilter.UNRECOGNIZED ->
-                    programsByChannel
+                ProgramCategoryFilter.CATEGORY_NONE -> programsByChannel
             }
         }
 
