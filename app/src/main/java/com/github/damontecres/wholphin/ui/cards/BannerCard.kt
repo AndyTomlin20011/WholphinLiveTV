@@ -58,12 +58,13 @@ fun BannerCard(
     favorite: Boolean = false,
     playPercent: Double = 0.0,
     cornerImageItemId: java.util.UUID? = null,
-    cornerImageType: ImageType = ImageType.PRIMARY,
+    cornerImageType: ImageType = ImageType.LOGO,
     cardHeight: Dp = 120.dp,
     aspectRatio: Float = AspectRatios.WIDE,
     interactionSource: MutableInteractionSource? = null,
 ) {
     val imageUrlService = LocalImageUrlService.current
+    val density = LocalDensity.current
     val cornerImageUrl =
         remember(cornerImageItemId, cornerImageType) {
             cornerImageItemId?.let { id ->
