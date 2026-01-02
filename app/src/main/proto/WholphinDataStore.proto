@@ -131,6 +131,15 @@ message LiveTvPreferences {
   bool favorite_channels_at_beginning = 2;
   bool sort_by_recently_watched = 3;
   bool color_code_programs = 4;
+  ProgramCategoryFilter program_category_filter = 5;
+}
+
+enum ProgramCategoryFilter {
+  CATEGORY_NONE = 0;
+  CATEGORY_KIDS = 1;
+  CATEGORY_MOVIE = 2;
+  CATEGORY_NEWS = 3;
+  CATEGORY_SPORTS = 4;
 }
 
 enum BackdropStyle{
