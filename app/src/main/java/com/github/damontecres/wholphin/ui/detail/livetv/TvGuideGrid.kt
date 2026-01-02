@@ -305,11 +305,11 @@ private fun ProgramCategoryFilterRow(
         LazyRow(
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            items(filters) { filter ->
-                val selected = filter == selectedFilter
+                items(filters) { filter ->
+                    val selected = filter == selectedFilter
                 Button(
                     onClick = { onSelectFilter(filter) },
-                    shape = RoundedCornerShape(16.dp),
+                    shape = ButtonDefaults.shape(),
                     colors =
                         ButtonDefaults.colors(
                             containerColor =

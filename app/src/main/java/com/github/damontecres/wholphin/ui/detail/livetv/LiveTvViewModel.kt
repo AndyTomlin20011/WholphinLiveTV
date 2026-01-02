@@ -13,6 +13,7 @@ import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.LiveTvPreferences
 import com.github.damontecres.wholphin.preferences.ProgramCategoryFilter
+import com.github.damontecres.wholphin.preferences.updateLiveTvPreferences
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.ui.AppColors
 import com.github.damontecres.wholphin.ui.data.RowColumn
@@ -507,9 +508,7 @@ class LiveTvViewModel
                     ?: ProgramCategoryFilter.CATEGORY_NONE
             viewModelScope.launchIO {
                 preferences.updateData {
-                    it.updateLiveTvPreferences {
-                        programCategoryFilter = selectedFilter
-                    }
+                    it.updateLiveTvPreferences { programCategoryFilter = selectedFilter }
                 }
             }
         }
