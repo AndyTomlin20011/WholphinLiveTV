@@ -471,7 +471,7 @@ fun HomePageContent(
                                                     else -> false
                                                 }
                                             }
-                                        val rowCardCornerText =
+                                        val rowCardOverlayText =
                                             remember(item, isProgramItem) {
                                                 if (isProgramItem) {
                                                     null
@@ -485,23 +485,7 @@ fun HomePageContent(
                                                               ?.let { abbreviateNumber(it) }
                                                 }
                                             }
-                                        val rowCardCornerLogoItemId =
-                                            remember(item, isProgramItem) {
-                                                if (isProgramItem) {
-                                                    item?.data?.channelId
-                                                } else {
-                                                    null
-                                                }
-                                            }
-                                        val cardCornerLogoItemId =
-                                            remember(item, isProgramItem) {
-                                                if (isProgramItem) {
-                                                    item?.data?.channelId
-                                                } else {
-                                                    null
-                                                }
-                                            }
-                                        val cardCornerLogoItemId =
+                                        val rowCardOverlayLogoItemId =
                                             remember(item, isProgramItem) {
                                                 if (isProgramItem) {
                                                     item?.data?.channelId
@@ -519,8 +503,8 @@ fun HomePageContent(
                                                 } else {
                                                     AspectRatios.TALL
                                                 },
-                                            cornerText = rowCardCornerText,
-                                            cornerImageItemId = rowCardCornerLogoItemId,
+                                            cornerText = rowCardOverlayText,
+                                            cornerImageItemId = rowCardOverlayLogoItemId,
                                             cornerImageType =
                                                 if (isProgramItem) {
                                                     ImageType.PRIMARY
