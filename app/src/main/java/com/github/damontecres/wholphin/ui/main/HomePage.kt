@@ -95,6 +95,7 @@ fun HomePage(
     val loading by viewModel.loadingState.observeAsState(LoadingState.Loading)
     val refreshing by viewModel.refreshState.observeAsState(LoadingState.Loading)
     val watchingRows by viewModel.watchingRows.observeAsState(listOf())
+    val sportsRows by viewModel.sportsRows.observeAsState(listOf())
     val latestRows by viewModel.latestRows.observeAsState(listOf())
     LaunchedEffect(loading) {
         val state = loading
@@ -126,7 +127,7 @@ fun HomePage(
             var showPlaylistDialog by remember { mutableStateOf<UUID?>(null) }
             val playlistState by playlistViewModel.playlistState.observeAsState(PlaylistLoadingState.Pending)
             HomePageContent(
-                watchingRows + latestRows,
+                watchingRows + sportsRows + latestRows,
                 onClickItem = { position, item ->
                     viewModel.navigationManager.navigateTo(item.destination())
                 },
@@ -356,10 +357,16 @@ fun HomePageContent(
                                                         ?.takeIf { it > 0 }
                                                         ?.let { abbreviateNumber(it) }
                                             }
-                                        BannerCard(
+                                    val isProgramRow = row.items.firstOrNull()?.type == BaseItemKind.PROGRAM
+                                    BannerCard(
                                             name = item?.data?.seriesName ?: item?.name,
                                             item = item,
-                                            aspectRatio = AspectRatios.TALL,
+                                            aspectRatio =
+                                                if (isProgramRow) {
+                                                    AspectRatios.WIDE
+                                                } else {
+                                                    AspectRatios.TALL
+                                                },
                                             cornerText = cornerText,
                                             played = item?.data?.userData?.played ?: false,
                                             favorite = item?.favorite ?: false,
