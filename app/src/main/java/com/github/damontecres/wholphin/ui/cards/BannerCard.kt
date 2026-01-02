@@ -79,13 +79,11 @@ fun BannerCard(
             }
         }
     val imageUrl =
-        remember(item, cardHeight) {
+        remember(item, cardHeight, density) {
             if (item != null) {
                 val fillHeight =
                     if (cardHeight != Dp.Unspecified) {
-                        with(density) {
-                            cardHeight.roundToPx()
-                        }
+                        with(density) { cardHeight.roundToPx() }
                     } else {
                         null
                     }
