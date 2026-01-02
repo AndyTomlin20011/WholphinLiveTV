@@ -30,6 +30,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.model.api.CollectionType
+import org.jellyfin.sdk.model.api.ItemFields
 import org.jellyfin.sdk.model.api.ItemSortBy
 import org.jellyfin.sdk.model.api.request.GetLatestMediaRequest
 import org.jellyfin.sdk.api.client.extensions.liveTvApi
@@ -205,7 +206,12 @@ class HomeViewModel
                         sortBy = listOf(ItemSortBy.START_DATE),
                         sortOrder = listOf(SortOrder.ASCENDING),
                         imageTypeLimit = 1,
-                        fields = SlimItemFields,
+                        fields =
+                            SlimItemFields +
+                                listOf(
+                                    ItemFields.MEDIA_SOURCES,
+                                    ItemFields.MEDIA_STREAMS,
+                                ),
                     )
                 api.liveTvApi
                     .getPrograms(request)
