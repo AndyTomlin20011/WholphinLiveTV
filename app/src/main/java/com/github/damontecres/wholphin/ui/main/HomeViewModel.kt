@@ -209,7 +209,6 @@ class HomeViewModel
                         fields =
                             SlimItemFields +
                                 listOf(
-                                    ItemFields.CHANNEL_ID,
                                     ItemFields.MEDIA_SOURCES,
                                     ItemFields.MEDIA_STREAMS,
                                 ),
