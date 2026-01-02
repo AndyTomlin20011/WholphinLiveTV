@@ -491,7 +491,38 @@ fun HomePageContent(
                                                     null
                                                 }
                                             }
-                                        BannerCard(
+                                        val cornerText =
+                                            remember(item, isProgramItem) {
+                                                if (isProgramItem) {
+                                                    null
+                                                } else {
+                                                    item?.data?.indexNumber?.let { "E$it" }
+                                                        ?: item
+                                                            ?.data
+                                                            ?.userData
+                                                            ?.unplayedItemCount
+                                                            ?.takeIf { it > 0 }
+                                                            ?.let { abbreviateNumber(it) }
+                                                }
+                                            }
+                                        val cornerLogoId =
+                                            remember(item, isProgramItem) {
+                                                if (isProgramItem) {
+                                                    item?.data?.channelId
+                                                } else {
+                                                    null
+                                                }
+                                            }
+                                        val cornerLogoId =
+                                            remember(item, isProgramItem) {
+                                                if (isProgramItem) {
+                                                    item?.data?.channelId
+                                                } else {
+                                                    null
+                                                }
+                                            }
+                                    val isProgramRow = row.items.firstOrNull()?.type == BaseItemKind.PROGRAM
+                                    BannerCard(
                                             name = item?.data?.seriesName ?: item?.name,
                                             item = item,
                                             aspectRatio =
