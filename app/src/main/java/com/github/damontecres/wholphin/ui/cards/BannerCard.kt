@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -61,6 +62,8 @@ fun BannerCard(
     cornerImageType: ImageType = ImageType.LOGO,
     cardHeight: Dp = 120.dp,
     aspectRatio: Float = AspectRatios.WIDE,
+    imageType: ImageType = ImageType.PRIMARY,
+    overlayContent: (BoxScope.() -> Unit)? = null,
     interactionSource: MutableInteractionSource? = null,
 ) {
     val imageUrlService = LocalImageUrlService.current
@@ -85,7 +88,7 @@ fun BannerCard(
             }
         }
     val imageUrl =
-        remember(item, cardHeight, density) {
+        remember(item, cardHeight, density, imageType) {
             if (item != null) {
                 val fillHeight =
                     if (cardHeight != Dp.Unspecified) {
@@ -95,10 +98,16 @@ fun BannerCard(
                     }
                 imageUrlService.getItemImageUrl(
                     item,
-                    ImageType.PRIMARY,
+                    imageType,
                     fillWidth = null,
                     fillHeight = fillHeight,
                 )
+                    ?: imageUrlService.getItemImageUrl(
+                        item,
+                        ImageType.PRIMARY,
+                        fillWidth = null,
+                        fillHeight = fillHeight,
+                    )
             } else {
                 null
             }
@@ -211,6 +220,7 @@ fun BannerCard(
                             .fillMaxWidth((playPercent / 100).toFloat()),
                 )
             }
+            overlayContent?.invoke(this)
         }
     }
 }

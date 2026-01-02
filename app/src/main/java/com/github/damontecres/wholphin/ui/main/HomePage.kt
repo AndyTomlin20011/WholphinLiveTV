@@ -4,6 +4,7 @@ import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusable
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -36,6 +37,8 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -48,11 +51,13 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
+import coil3.compose.AsyncImage
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.AspectRatios
 import com.github.damontecres.wholphin.ui.Cards
+import com.github.damontecres.wholphin.ui.LocalImageUrlService
 import com.github.damontecres.wholphin.ui.abbreviateNumber
 import com.github.damontecres.wholphin.ui.cards.BannerCard
 import com.github.damontecres.wholphin.ui.cards.ItemRow
@@ -76,6 +81,7 @@ import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.playback.isPlayKeyUp
 import com.github.damontecres.wholphin.ui.playback.playable
 import com.github.damontecres.wholphin.ui.tryRequestFocus
+import com.github.damontecres.wholphin.ui.AppColors
 import com.github.damontecres.wholphin.util.HomeRowLoadingState
 import com.github.damontecres.wholphin.util.LoadingState
 import kotlinx.coroutines.delay
@@ -267,7 +273,7 @@ fun HomePageContent(
 ) {
     val context = LocalContext.current
     val density = LocalDensity.current
-    val heroCardHeight = Cards.height2x3 * 1.6f
+    val heroCardHeight = Cards.height2x3 * 1.7f
     val heroOffset = if (heroItems.isNotEmpty()) 1 else 0
     val firstRow =
         remember {
@@ -320,7 +326,12 @@ fun HomePageContent(
                         rowFocusRequesters[it].tryRequestFocus()
                         delay(50)
                         val maxIndex = (listState.layoutInfo.totalItemsCount - 1).coerceAtLeast(0)
-                        val targetIndex = (position.row + heroOffset).coerceAtMost(maxIndex)
+                        val targetIndex =
+                            if (heroItems.isNotEmpty() && position.row == 0) {
+                                0
+                            } else {
+                                (position.row + heroOffset).coerceAtMost(maxIndex)
+                            }
                         listState.animateScrollToItem(targetIndex)
                         focused = true
                     }
@@ -330,7 +341,12 @@ fun HomePageContent(
         }
     }
     LaunchedEffect(position, heroOffset, listState.layoutInfo.totalItemsCount) {
-        val targetIndex = position.row + heroOffset
+        val targetIndex =
+            if (heroItems.isNotEmpty() && position.row == 0) {
+                0
+            } else {
+                position.row + heroOffset
+            }
         val maxIndex = (listState.layoutInfo.totalItemsCount - 1).coerceAtLeast(0)
         listState.animateScrollToItem(targetIndex.coerceAtMost(maxIndex))
     }
@@ -568,9 +584,12 @@ private fun HomeHeroCarousel(
     onUpdateBackdrop: (BaseItem) -> Unit,
     focusRequester: FocusRequester,
     modifier: Modifier = Modifier,
-    cardHeight: Dp = 220.dp,
+    cardHeight: Dp = 260.dp,
 ) {
     val focusRequesters = remember(items.size) { List(items.size) { FocusRequester() } }
+    val imageUrlService = LocalImageUrlService.current
+    val density = LocalDensity.current
+    val gradientStartY = remember(cardHeight, density) { cardHeight.toPx() * 0.2f }
     LazyRow(
         horizontalArrangement = Arrangement.spacedBy(16.dp),
         contentPadding = PaddingValues(horizontal = 24.dp, vertical = 16.dp),
@@ -578,16 +597,83 @@ private fun HomeHeroCarousel(
     ) {
         itemsIndexed(items) { index, item ->
             val requester = focusRequesters.getOrNull(index)
+            val logoUrl =
+                remember(item) {
+                    imageUrlService.getItemImageUrl(
+                        item,
+                        ImageType.LOGO,
+                        maxWidth = 480,
+                        maxHeight = 180,
+                    )
+                        ?: imageUrlService.getItemImageUrl(
+                            item,
+                            ImageType.PRIMARY,
+                            maxHeight = 180,
+                            maxWidth = 480,
+                        )
+                }
             BannerCard(
                 name = item.data.seriesName ?: item.name,
                 item = item,
+                imageType = ImageType.BACKDROP,
                 onClick = { onClick(item) },
                 onLongClick = { onLongClick(item) },
                 played = item.data.userData?.played ?: false,
                 favorite = item.favorite ?: false,
                 playPercent = item.data.userData?.playedPercentage ?: 0.0,
                 cardHeight = cardHeight,
-                aspectRatio = AspectRatios.WIDE,
+                aspectRatio = 2.4f,
+                overlayContent = {
+                    Box(
+                        modifier =
+                            Modifier
+                                .fillMaxSize()
+                                .background(
+                                    Brush.verticalGradient(
+                                        colors =
+                                            listOf(
+                                                Color.Transparent,
+                                                AppColors.TransparentBlack75,
+                                            ),
+                                        startY = gradientStartY,
+                                    ),
+                                ),
+                    )
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier =
+                            Modifier
+                                .align(Alignment.BottomStart)
+                                .padding(20.dp)
+                                .fillMaxWidth(.65f),
+                    ) {
+                        if (logoUrl != null) {
+                            AsyncImage(
+                                model = logoUrl,
+                                contentDescription = item.name,
+                                contentScale = ContentScale.Fit,
+                                modifier = Modifier.height(64.dp),
+                            )
+                        } else {
+                            Text(
+                                text = item.title ?: "",
+                                style = MaterialTheme.typography.headlineMedium,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                        }
+                        item.data.overview?.takeIf { it.isNotBlank() }?.let { overview ->
+                            Text(
+                                text = overview,
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                maxLines = 2,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                        }
+                    }
+                },
                 modifier =
                     Modifier
                         .focusRequester(if (index == 0) focusRequester else requester ?: focusRequester)
