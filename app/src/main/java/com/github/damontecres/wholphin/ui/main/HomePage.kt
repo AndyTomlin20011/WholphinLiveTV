@@ -2,7 +2,6 @@ package com.github.damontecres.wholphin.ui.main
 
 import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.foundation.background
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -38,6 +37,7 @@ import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.platform.LocalContext
@@ -483,6 +483,28 @@ fun HomePageContent(
                                                             ?.let { abbreviateNumber(it) }
                                                 }
                                             }
+                                        val cornerLogoItemId =
+                                            remember(item, isProgramItem) {
+                                                if (isProgramItem) {
+                                                    item?.data?.channelId
+                                                } else {
+                                                    null
+                                                }
+                                            }
+                                        val cornerText =
+                                            remember(item, isProgramItem) {
+                                                if (isProgramItem) {
+                                                    null
+                                                } else {
+                                                    item?.data?.indexNumber?.let { "E$it" }
+                                                        ?: item
+                                                            ?.data
+                                                            ?.userData
+                                                            ?.unplayedItemCount
+                                                            ?.takeIf { it > 0 }
+                                                            ?.let { abbreviateNumber(it) }
+                                                }
+                                            }
                                         val cornerLogoId =
                                             remember(item, isProgramItem) {
                                                 if (isProgramItem) {
@@ -510,7 +532,7 @@ fun HomePageContent(
                                                     AspectRatios.TALL
                                                 },
                                             cornerText = cornerText,
-                                            cornerImageItemId = cornerLogoId,
+                                            cornerImageItemId = cornerLogoItemId,
                                             cornerImageType =
                                                 if (isProgramItem) {
                                                     ImageType.PRIMARY
@@ -608,14 +630,14 @@ private fun HomeHeroCarousel(
             val logoUrl =
                 remember(item) {
                     imageUrlService.getItemImageUrl(
-                        item,
-                        ImageType.LOGO,
+                        itemId = item.id,
+                        imageType = ImageType.LOGO,
                         maxWidth = 480,
                         maxHeight = 180,
                     )
                         ?: imageUrlService.getItemImageUrl(
-                            item,
-                            ImageType.PRIMARY,
+                            itemId = item.id,
+                            imageType = ImageType.PRIMARY,
                             maxHeight = 180,
                             maxWidth = 480,
                         )
