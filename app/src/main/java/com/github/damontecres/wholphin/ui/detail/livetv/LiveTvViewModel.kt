@@ -544,6 +544,8 @@ class LiveTvViewModel
         }
 
         private fun shouldFilterChannels() =
+            (liveTvPreferences ?: defaultLiveTvPreferences).programCategoryFilter !in
+                setOf(ProgramCategoryFilter.CATEGORY_NONE, ProgramCategoryFilter.UNRECOGNIZED)
             (liveTvPreferences ?: defaultLiveTvPreferences).programCategoryFilter !=
                 ProgramCategoryFilter.CATEGORY_NONE
 
@@ -566,6 +568,8 @@ class LiveTvViewModel
                 ProgramCategoryFilter.CATEGORY_SPORTS ->
                     filterProgramsByCategory(programsByChannel, ProgramCategory.SPORTS)
 
+                ProgramCategoryFilter.CATEGORY_NONE, ProgramCategoryFilter.UNRECOGNIZED ->
+                    programsByChannel
                 ProgramCategoryFilter.CATEGORY_NONE -> programsByChannel
             }
         }
