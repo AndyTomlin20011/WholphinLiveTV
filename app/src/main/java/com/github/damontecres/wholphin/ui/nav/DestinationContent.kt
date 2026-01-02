@@ -172,6 +172,21 @@ fun DestinationContent(
                     )
                 }
 
+                BaseItemKind.PROGRAM,
+                BaseItemKind.TV_PROGRAM,
+                BaseItemKind.LIVE_TV_PROGRAM,
+                -> {
+                    LaunchedEffect(Unit) { onClearBackdrop.invoke() }
+                    val playbackDestination =
+                        destination.item?.let { Destination.Playback(it) }
+                            ?: Destination.Playback(destination.itemId, 0)
+                    PlaybackPage(
+                        preferences = preferences,
+                        destination = playbackDestination,
+                        modifier = modifier,
+                    )
+                }
+
                 BaseItemKind.PERSON -> {
                     LaunchedEffect(Unit) { onClearBackdrop.invoke() }
                     PersonPage(
