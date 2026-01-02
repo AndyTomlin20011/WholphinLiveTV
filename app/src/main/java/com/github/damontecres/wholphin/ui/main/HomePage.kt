@@ -38,6 +38,7 @@ import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import org.jellyfin.sdk.model.api.ImageType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -95,6 +96,7 @@ fun HomePage(
     val loading by viewModel.loadingState.observeAsState(LoadingState.Loading)
     val refreshing by viewModel.refreshState.observeAsState(LoadingState.Loading)
     val watchingRows by viewModel.watchingRows.observeAsState(listOf())
+    val sportsRows by viewModel.sportsRows.observeAsState(listOf())
     val latestRows by viewModel.latestRows.observeAsState(listOf())
     LaunchedEffect(loading) {
         val state = loading
@@ -126,7 +128,7 @@ fun HomePage(
             var showPlaylistDialog by remember { mutableStateOf<UUID?>(null) }
             val playlistState by playlistViewModel.playlistState.observeAsState(PlaylistLoadingState.Pending)
             HomePageContent(
-                watchingRows + latestRows,
+                watchingRows + sportsRows + latestRows,
                 onClickItem = { position, item ->
                     viewModel.navigationManager.navigateTo(item.destination())
                 },
@@ -162,7 +164,19 @@ fun HomePage(
                         )
                 },
                 onClickPlay = { _, item ->
-                    viewModel.navigationManager.navigateTo(Destination.Playback(item))
+                    val destination =
+                        when (item.type) {
+                            BaseItemKind.PROGRAM,
+                            BaseItemKind.TV_PROGRAM,
+                            BaseItemKind.LIVE_TV_PROGRAM,
+                            ->
+                                item.data.channelId?.let { channelId ->
+                                    Destination.Playback(channelId, 0)
+                                } ?: Destination.Playback(item)
+
+                            else -> Destination.Playback(item)
+                        }
+                    viewModel.navigationManager.navigateTo(destination)
                 },
                 loadingState = refreshing,
                 showClock = preferences.appPreferences.interfacePreferences.showClock,
@@ -346,21 +360,56 @@ fun HomePageContent(
                                             .focusRequester(rowFocusRequesters[rowIndex])
                                             .animateItem(),
                                     cardContent = { index, item, cardModifier, onClick, onLongClick ->
-                                        val cornerText =
+                                        val isProgramItem =
                                             remember(item) {
-                                                item?.data?.indexNumber?.let { "E$it" }
-                                                    ?: item
-                                                        ?.data
-                                                        ?.userData
-                                                        ?.unplayedItemCount
-                                                        ?.takeIf { it > 0 }
-                                                        ?.let { abbreviateNumber(it) }
+                                                when (item?.type) {
+                                                    BaseItemKind.PROGRAM,
+                                                    BaseItemKind.TV_PROGRAM,
+                                                    BaseItemKind.LIVE_TV_PROGRAM,
+                                                    -> true
+
+                                                    else -> false
+                                                }
+                                            }
+                                        val cornerText =
+                                            remember(item, isProgramItem) {
+                                                if (isProgramItem) {
+                                                    null
+                                                } else {
+                                                    item?.data?.indexNumber?.let { "E$it" }
+                                                        ?: item
+                                                            ?.data
+                                                            ?.userData
+                                                            ?.unplayedItemCount
+                                                            ?.takeIf { it > 0 }
+                                                            ?.let { abbreviateNumber(it) }
+                                                }
+                                            }
+                                        val cornerLogoId =
+                                            remember(item, isProgramItem) {
+                                                if (isProgramItem) {
+                                                    item?.data?.channelId
+                                                } else {
+                                                    null
+                                                }
                                             }
                                         BannerCard(
                                             name = item?.data?.seriesName ?: item?.name,
                                             item = item,
-                                            aspectRatio = AspectRatios.TALL,
+                                            aspectRatio =
+                                                if (isProgramItem) {
+                                                    AspectRatios.WIDE
+                                                } else {
+                                                    AspectRatios.TALL
+                                                },
                                             cornerText = cornerText,
+                                            cornerImageItemId = cornerLogoId,
+                                            cornerImageType =
+                                                if (isProgramItem) {
+                                                    ImageType.PRIMARY
+                                                } else {
+                                                    ImageType.LOGO
+                                                },
                                             played = item?.data?.userData?.played ?: false,
                                             favorite = item?.favorite ?: false,
                                             playPercent =
