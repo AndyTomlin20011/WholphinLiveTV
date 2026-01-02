@@ -471,9 +471,9 @@ fun HomePageContent(
                                                     else -> false
                                                 }
                                             }
-                                        val rowCardOverlay =
+                                        val (overlayText, overlayLogoId, overlayImageType) =
                                             remember(item, isProgramItem) {
-                                                val overlayText =
+                                                val text =
                                                     if (isProgramItem) {
                                                         null
                                                     } else {
@@ -485,15 +485,10 @@ fun HomePageContent(
                                                                 ?.takeIf { it > 0 }
                                                                 ?.let { abbreviateNumber(it) }
                                                     }
-                                                val overlayLogoId =
-                                                    if (isProgramItem) {
-                                                        item?.data?.channelId
-                                                    } else {
-                                                        null
-                                                    }
+                                                val logoId = if (isProgramItem) item?.data?.channelId else null
                                                 Triple(
-                                                    overlayText,
-                                                    overlayLogoId,
+                                                    text,
+                                                    logoId,
                                                     if (isProgramItem) ImageType.PRIMARY else ImageType.LOGO,
                                                 )
                                             }
@@ -559,9 +554,9 @@ fun HomePageContent(
                                                 } else {
                                                     AspectRatios.TALL
                                                 },
-                                            cornerText = rowCardOverlay.first,
-                                            cornerImageItemId = rowCardOverlay.second,
-                                            cornerImageType = rowCardOverlay.third,
+                                            cornerText = overlayText,
+                                            cornerImageItemId = overlayLogoId,
+                                            cornerImageType = overlayImageType,
                                             played = item?.data?.userData?.played ?: false,
                                             favorite = item?.favorite ?: false,
                                             playPercent =
