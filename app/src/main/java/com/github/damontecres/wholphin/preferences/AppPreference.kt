@@ -866,6 +866,11 @@ sealed interface AppPreference<Pref, T> {
                 defaultValue = ProgramCategoryFilter.CATEGORY_NONE,
                 displayValues = R.array.program_category_filters,
                 indexToValue = { index ->
+                    ProgramCategoryFilter.forNumber(index) ?: ProgramCategoryFilter.CATEGORY_NONE
+                },
+                valueToIndex = { value ->
+                    if (value != ProgramCategoryFilter.UNRECOGNIZED) value.number else 0
+                },
                     ProgramCategoryFilter.values().getOrNull(index)
                         ?: ProgramCategoryFilter.CATEGORY_NONE
                 },

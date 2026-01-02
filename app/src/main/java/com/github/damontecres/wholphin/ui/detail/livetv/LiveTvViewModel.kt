@@ -543,6 +543,11 @@ class LiveTvViewModel
             }
         }
 
+        private fun shouldFilterChannels(): Boolean {
+            val filter = (liveTvPreferences ?: defaultLiveTvPreferences).programCategoryFilter
+            return filter !in
+                setOf(ProgramCategoryFilter.CATEGORY_NONE, ProgramCategoryFilter.UNRECOGNIZED)
+        }
         private fun shouldFilterChannels() =
             (liveTvPreferences ?: defaultLiveTvPreferences).programCategoryFilter !in
                 setOf(ProgramCategoryFilter.CATEGORY_NONE, ProgramCategoryFilter.UNRECOGNIZED)
