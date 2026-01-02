@@ -1,5 +1,6 @@
 package com.github.damontecres.wholphin.ui.cards
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -21,6 +22,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.TileMode
@@ -129,25 +132,28 @@ fun BannerCard(
 //                containerColor = Color.Transparent,
             ),
         border =
-            if (isFocused) {
-                val baseColor = MaterialTheme.colorScheme.surface
-                val highlight =
-                    if (baseColor.luminance() > 0.5f) {
-                        baseColor.copy(alpha = 0.35f)
+            CardDefaults.cardBorder(
+                focusedBorder =
+                    if (isFocused) {
+                        val baseColor = MaterialTheme.colorScheme.surface
+                        val highlight =
+                            if (baseColor.luminance() > 0.5f) {
+                                baseColor.copy(alpha = 0.35f)
+                            } else {
+                                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.25f)
+                            }
+                        BorderStroke(
+                            2.dp,
+                            Brush.linearGradient(
+                                colors = listOf(highlight, highlight.copy(alpha = 0.1f), highlight),
+                                tileMode = TileMode.Clamp,
+                            ),
+                        )
                     } else {
-                        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.25f)
-                    }
-                BorderStroke(
-                    2.dp,
-                    Brush.linearGradient(
-                        colors = listOf(highlight, highlight.copy(alpha = 0.1f), highlight),
-                        tileMode = TileMode.Clamp,
-                    ),
-                )
-            } else {
-                null
-            },
-        shape = focusedBorderShape,
+                        null
+                    },
+            ),
+        shape = CardDefaults.shape(focusedBorderShape),
     ) {
         Box(
             modifier =
