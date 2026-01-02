@@ -506,26 +506,12 @@ class LiveTvViewModel
                 filter.takeUnless { it == ProgramCategoryFilter.UNRECOGNIZED }
                     ?: ProgramCategoryFilter.CATEGORY_NONE
             viewModelScope.launchIO {
-                preferences.updateData { it.withProgramCategoryFilter(selectedFilter) }
+                preferences.updateData {
+                    it.updateLiveTvPreferences {
+                        programCategoryFilter = selectedFilter
+                    }
+                }
             }
-        }
-
-        private fun AppPreferences.withProgramCategoryFilter(
-            filter: ProgramCategoryFilter,
-        ): AppPreferences {
-            val updatedLiveTvPrefs =
-                interfacePreferences.liveTvPreferences
-                    .toBuilder()
-                    .setProgramCategoryFilter(filter)
-                    .build()
-
-            val updatedInterfacePrefs =
-                interfacePreferences
-                    .toBuilder()
-                    .setLiveTvPreferences(updatedLiveTvPrefs)
-                    .build()
-
-            return toBuilder().setInterfacePreferences(updatedInterfacePrefs).build()
         }
 
         fun onFocusChannel(position: RowColumn) {

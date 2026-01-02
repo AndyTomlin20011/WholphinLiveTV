@@ -397,7 +397,6 @@
     <string name="sort_channels_recently_watched">Sort channels by recently watched</string>
     <string name="color_code_programs">Color-code programs</string>
     <string name="filter_program_category">Filter channels by category</string>
-    <string name="live_tv_categories">Categories</string>
     <string name="program_category_all">All categories</string>
     <string name="program_category_kids">Kids</string>
     <string name="program_category_movies">Movies</string>
