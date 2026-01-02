@@ -393,7 +393,8 @@ fun HomePageContent(
                                                     null
                                                 }
                                             }
-                                        BannerCard(
+                                    val isProgramRow = row.items.firstOrNull()?.type == BaseItemKind.PROGRAM
+                                    BannerCard(
                                             name = item?.data?.seriesName ?: item?.name,
                                             item = item,
                                             aspectRatio =
