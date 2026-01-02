@@ -403,6 +403,7 @@
     <string name="program_category_movies">Movies</string>
     <string name="program_category_news">News</string>
     <string name="program_category_sports">Sports</string>
+    <string name="sports_on_now">Sports on now</string>
     <string name="subtitle_delay">Subtitle delay</string>
     <string name="backdrop_display">Backdrop style</string>
     <string name="resolution_switching">Resolution switching</string>

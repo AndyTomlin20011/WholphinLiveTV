@@ -17,6 +17,7 @@ import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.nav.ServerNavDrawerItem
 import com.github.damontecres.wholphin.ui.setValueOnMain
+import com.github.damontecres.wholphin.ui.SlimItemFields
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.HomeRowLoadingState
 import com.github.damontecres.wholphin.util.LoadingExceptionHandler
@@ -29,8 +30,12 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.model.api.CollectionType
+import org.jellyfin.sdk.model.api.ItemSortBy
 import org.jellyfin.sdk.model.api.request.GetLatestMediaRequest
+import org.jellyfin.sdk.model.api.request.GetProgramsDto
+import org.jellyfin.sdk.model.api.request.SortOrder
 import timber.log.Timber
+import java.time.LocalDateTime
 import java.util.UUID
 import javax.inject.Inject
 
@@ -51,6 +56,7 @@ class HomeViewModel
         val loadingState = MutableLiveData<LoadingState>(LoadingState.Pending)
         val refreshState = MutableLiveData<LoadingState>(LoadingState.Pending)
         val watchingRows = MutableLiveData<List<HomeRowLoadingState>>(listOf())
+        val sportsRows = MutableLiveData<List<HomeRowLoadingState>>(listOf())
         val latestRows = MutableLiveData<List<HomeRowLoadingState>>(listOf())
 
         private lateinit var preferences: UserPreferences
@@ -126,16 +132,32 @@ class HomeViewModel
 
                     val latest = latestNextUpService.getLatest(userDto, limit, includedIds)
                     val pendingLatest = latest.map { HomeRowLoadingState.Loading(it.title) }
+                    val sportsTitle = context.getString(R.string.sports_on_now)
 
                     withContext(Dispatchers.Main) {
                         this@HomeViewModel.watchingRows.value = watching
                         if (reload) {
+                            this@HomeViewModel.sportsRows.value =
+                                listOf(HomeRowLoadingState.Loading(sportsTitle))
                             this@HomeViewModel.latestRows.value = pendingLatest
                         }
                         loadingState.value = LoadingState.Success
                     }
                     refreshState.setValueOnMain(LoadingState.Success)
+                    val sportsPrograms = loadSportsOnNow(userDto.id, limit)
+                    val sportsRows =
+                        sportsPrograms
+                            .takeIf { it.isNotEmpty() }
+                            ?.let {
+                                listOf(
+                                    HomeRowLoadingState.Success(
+                                        title = sportsTitle,
+                                        items = it,
+                                    ),
+                                )
+                            }.orEmpty()
                     val loadedLatest = latestNextUpService.loadLatest(latest)
+                    this@HomeViewModel.sportsRows.setValueOnMain(sportsRows)
                     this@HomeViewModel.latestRows.setValueOnMain(loadedLatest)
                 }
             }
@@ -166,6 +188,35 @@ class HomeViewModel
                 backdropService.submit(item)
             }
         }
+
+        private suspend fun loadSportsOnNow(
+            userId: UUID,
+            limit: Int,
+        ): List<BaseItem> =
+            try {
+                val now = LocalDateTime.now()
+                val request =
+                    GetProgramsDto(
+                        userId = userId,
+                        maxStartDate = now,
+                        minEndDate = now,
+                        isSports = true,
+                        sortBy = listOf(ItemSortBy.START_DATE),
+                        sortOrder = listOf(SortOrder.ASCENDING),
+                        imageTypeLimit = 1,
+                        fields = SlimItemFields,
+                    )
+                api.liveTvApi
+                    .getPrograms(request)
+                    .content
+                    .items
+                    .map { BaseItem.from(it, api, true) }
+                    .distinctBy { it.id }
+                    .take(limit)
+            } catch (ex: Exception) {
+                Timber.e(ex, "Error loading sports programs on now")
+                emptyList()
+            }
     }
 
 val supportedLatestCollectionTypes =
