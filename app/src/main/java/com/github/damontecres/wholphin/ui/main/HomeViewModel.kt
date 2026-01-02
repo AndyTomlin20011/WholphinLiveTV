@@ -32,8 +32,9 @@ import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.model.api.CollectionType
 import org.jellyfin.sdk.model.api.ItemSortBy
 import org.jellyfin.sdk.model.api.request.GetLatestMediaRequest
-import org.jellyfin.sdk.model.api.request.GetProgramsDto
-import org.jellyfin.sdk.model.api.request.SortOrder
+import org.jellyfin.sdk.api.client.extensions.liveTvApi
+import org.jellyfin.sdk.model.api.GetProgramsDto
+import org.jellyfin.sdk.model.api.SortOrder
 import timber.log.Timber
 import java.time.LocalDateTime
 import java.util.UUID
