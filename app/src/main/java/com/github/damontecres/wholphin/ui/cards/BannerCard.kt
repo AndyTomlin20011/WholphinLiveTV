@@ -66,15 +66,21 @@ fun BannerCard(
     val imageUrlService = LocalImageUrlService.current
     val density = LocalDensity.current
     val cornerImageUrl =
-        remember(cornerImageItemId, cornerImageType) {
+        remember(cornerImageItemId, cornerImageType, density) {
             cornerImageItemId?.let { id ->
+                val targetWidth = with(density) { 56.dp.roundToPx() }
+                val targetHeight = with(density) { 32.dp.roundToPx() }
                 imageUrlService.getItemImageUrl(
                     itemId = id,
                     imageType = cornerImageType,
+                    maxWidth = targetWidth,
+                    maxHeight = targetHeight,
                 )
                     ?: imageUrlService.getItemImageUrl(
                         itemId = id,
                         imageType = ImageType.PRIMARY,
+                        maxWidth = targetWidth,
+                        maxHeight = targetHeight,
                     )
             }
         }

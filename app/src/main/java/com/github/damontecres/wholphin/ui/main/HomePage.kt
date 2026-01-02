@@ -38,6 +38,7 @@ import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import org.jellyfin.sdk.model.api.ImageType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -404,6 +405,12 @@ fun HomePageContent(
                                                 },
                                             cornerText = cornerText,
                                             cornerImageItemId = cornerLogoId,
+                                            cornerImageType =
+                                                if (isProgramItem) {
+                                                    ImageType.PRIMARY
+                                                } else {
+                                                    ImageType.LOGO
+                                                },
                                             played = item?.data?.userData?.played ?: false,
                                             favorite = item?.favorite ?: false,
                                             playPercent =
