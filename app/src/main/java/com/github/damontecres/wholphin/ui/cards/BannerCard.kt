@@ -58,33 +58,22 @@ fun BannerCard(
     favorite: Boolean = false,
     playPercent: Double = 0.0,
     cornerImageItemId: java.util.UUID? = null,
-    cornerImageType: ImageType = ImageType.LOGO,
+    cornerImageType: ImageType = ImageType.PRIMARY,
     cardHeight: Dp = 120.dp,
     aspectRatio: Float = AspectRatios.WIDE,
     interactionSource: MutableInteractionSource? = null,
 ) {
     val imageUrlService = LocalImageUrlService.current
-    val density = LocalDensity.current
     val cornerImageUrl =
-        remember(cornerImageItemId, cornerImageType, cardHeight) {
+        remember(cornerImageItemId, cornerImageType) {
             cornerImageItemId?.let { id ->
-                val fillHeight =
-                    if (cardHeight != Dp.Unspecified) {
-                        with(density) {
-                            (cardHeight * .25f).roundToPx()
-                        }
-                    } else {
-                        null
-                    }
                 imageUrlService.getItemImageUrl(
                     itemId = id,
                     imageType = cornerImageType,
-                    fillHeight = fillHeight,
                 )
                     ?: imageUrlService.getItemImageUrl(
                         itemId = id,
                         imageType = ImageType.PRIMARY,
-                        fillHeight = fillHeight,
                     )
             }
         }
