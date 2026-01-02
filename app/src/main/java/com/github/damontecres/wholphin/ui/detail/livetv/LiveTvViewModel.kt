@@ -546,6 +546,8 @@ class LiveTvViewModel
         private fun shouldFilterChannels() =
             (liveTvPreferences ?: defaultLiveTvPreferences).programCategoryFilter !in
                 setOf(ProgramCategoryFilter.CATEGORY_NONE, ProgramCategoryFilter.UNRECOGNIZED)
+            (liveTvPreferences ?: defaultLiveTvPreferences).programCategoryFilter !=
+                ProgramCategoryFilter.CATEGORY_NONE
 
         private val defaultLiveTvPreferences
             get() = AppPreferences.getDefaultInstance().interfacePreferences.liveTvPreferences
@@ -568,6 +570,7 @@ class LiveTvViewModel
 
                 ProgramCategoryFilter.CATEGORY_NONE, ProgramCategoryFilter.UNRECOGNIZED ->
                     programsByChannel
+                ProgramCategoryFilter.CATEGORY_NONE -> programsByChannel
             }
         }
 
