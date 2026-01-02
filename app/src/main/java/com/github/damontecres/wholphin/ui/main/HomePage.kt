@@ -163,7 +163,19 @@ fun HomePage(
                         )
                 },
                 onClickPlay = { _, item ->
-                    viewModel.navigationManager.navigateTo(Destination.Playback(item))
+                    val destination =
+                        when (item.type) {
+                            BaseItemKind.PROGRAM,
+                            BaseItemKind.TV_PROGRAM,
+                            BaseItemKind.LIVE_TV_PROGRAM,
+                            ->
+                                item.data.channelId?.let { channelId ->
+                                    Destination.Playback(channelId, 0)
+                                } ?: Destination.Playback(item)
+
+                            else -> Destination.Playback(item)
+                        }
+                    viewModel.navigationManager.navigateTo(destination)
                 },
                 loadingState = refreshing,
                 showClock = preferences.appPreferences.interfacePreferences.showClock,
