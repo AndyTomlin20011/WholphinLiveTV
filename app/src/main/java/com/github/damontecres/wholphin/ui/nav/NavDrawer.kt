@@ -81,6 +81,7 @@ import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.SetupDestination
 import com.github.damontecres.wholphin.services.SetupNavigationManager
 import com.github.damontecres.wholphin.ui.FontAwesome
+import com.github.damontecres.wholphin.ui.LocalImageUrlService
 import com.github.damontecres.wholphin.ui.components.TimeDisplay
 import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.launchIO
@@ -100,6 +101,14 @@ import org.jellyfin.sdk.model.api.CollectionType
 import timber.log.Timber
 import java.util.UUID
 import javax.inject.Inject
+import coil3.compose.AsyncImage
+import coil3.request.ImageRequest
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Shape
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.unit.Dp
 
 @HiltViewModel
 class NavDrawerViewModel
@@ -226,9 +235,11 @@ fun NavDrawer(
     val listState = rememberLazyListState()
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
+    val imageUrlService = LocalImageUrlService.current
 
     val focusRequester = remember { FocusRequester() }
     val searchFocusRequester = remember { FocusRequester() }
+    val userImageUrl = remember(user.id) { imageUrlService.getUserImageUrl(user.id) }
 
     // If the user presses back while on the home page, open the nav drawer, another back press will quit the app
     BackHandler(enabled = (drawerState.currentValue == DrawerValue.Closed && destination is Destination.Home)) {
@@ -357,6 +368,7 @@ fun NavDrawer(
                         text = user?.name ?: "",
                         subtext = server?.name ?: server?.url,
                         icon = Icons.Default.AccountCircle,
+                        userImageUrl = userImageUrl,
                         selected = false,
                         drawerOpen = drawerState.isOpen,
                         interactionSource = interactionSource,
@@ -549,20 +561,40 @@ fun NavigationDrawerScope.IconNavItem(
     modifier: Modifier = Modifier,
     subtext: String? = null,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
+    userImageUrl: String? = null,
+    imageSize: Dp = 36.dp,
+    imageShape: Shape = CircleShape,
 ) {
     val focused by interactionSource.collectIsFocusedAsState()
+    val context = LocalContext.current
     NavigationDrawerItem(
         modifier = modifier,
         selected = false,
         onClick = onClick,
         leadingContent = {
             val color = navItemColor(selected, focused, drawerOpen)
-            Icon(
-                icon,
-                contentDescription = null,
-                tint = color,
-                modifier = Modifier.padding(0.dp),
-            )
+            if (userImageUrl != null) {
+                AsyncImage(
+                    model =
+                        ImageRequest
+                            .Builder(context)
+                            .data(userImageUrl)
+                            .build(),
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    modifier =
+                        Modifier
+                            .size(imageSize)
+                            .clip(imageShape),
+                )
+            } else {
+                Icon(
+                    icon,
+                    contentDescription = null,
+                    tint = color,
+                    modifier = Modifier.padding(0.dp),
+                )
+            }
         },
         supportingContent =
             subtext?.let {
