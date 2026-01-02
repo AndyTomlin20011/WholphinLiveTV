@@ -471,9 +471,9 @@ fun HomePageContent(
                                                     else -> false
                                                 }
                                             }
-                                        val (overlayText, overlayLogoId, overlayImageType) =
+                                        val overlayDetails =
                                             remember(item, isProgramItem) {
-                                                val text =
+                                                val computedText =
                                                     if (isProgramItem) {
                                                         null
                                                     } else {
@@ -485,67 +485,17 @@ fun HomePageContent(
                                                                 ?.takeIf { it > 0 }
                                                                 ?.let { abbreviateNumber(it) }
                                                     }
-                                                val logoId = if (isProgramItem) item?.data?.channelId else null
-                                                Triple(
-                                                    text,
-                                                    logoId,
-                                                    if (isProgramItem) ImageType.PRIMARY else ImageType.LOGO,
-                                                )
+                                                val computedLogoId =
+                                                    if (isProgramItem) item?.data?.channelId else null
+                                                val computedImageType =
+                                                    if (isProgramItem) ImageType.PRIMARY else ImageType.LOGO
+
+                                                Triple(computedText, computedLogoId, computedImageType)
                                             }
-                                        val rowCardOverlayLogoId =
-                                            remember(item, isProgramItem) {
-                                                if (isProgramItem) {
-                                                    item?.data?.channelId
-                                                } else {
-                                                    null
-                                                }
-                                            }
-                                        val rowCardOverlayText =
-                                            remember(item, isProgramItem) {
-                                                if (isProgramItem) {
-                                                    null
-                                                } else {
-                                                    item?.data?.indexNumber?.let { "E$it" }
-                                                        ?: item
-                                                            ?.data
-                                                            ?.userData
-                                                            ?.unplayedItemCount
-                                                              ?.takeIf { it > 0 }
-                                                              ?.let { abbreviateNumber(it) }
-                                                }
-                                            }
-                                        val rowCardOverlayLogoItemId =
-                                            remember(item, isProgramItem) {
-                                                if (isProgramItem) {
-                                                    item?.data?.channelId
-                                                } else {
-                                                    null
-                                                }
-                                            }
-                                        val rowCardOverlayText =
-                                            remember(item, isProgramItem) {
-                                                if (isProgramItem) {
-                                                    null
-                                                } else {
-                                                    item?.data?.indexNumber?.let { "E$it" }
-                                                        ?: item
-                                                            ?.data
-                                                            ?.userData
-                                                            ?.unplayedItemCount
-                                                              ?.takeIf { it > 0 }
-                                                              ?.let { abbreviateNumber(it) }
-                                                }
-                                            }
-                                        val rowCardOverlayLogoItemId =
-                                            remember(item, isProgramItem) {
-                                                if (isProgramItem) {
-                                                    item?.data?.channelId
-                                                } else {
-                                                    null
-                                                }
-                                            }
-                                    val isProgramRow = row.items.firstOrNull()?.type == BaseItemKind.PROGRAM
-                                    BannerCard(
+                                        val overlayTextForRow = overlayDetails.first
+                                        val overlayLogoIdForRow = overlayDetails.second
+                                        val overlayImageTypeForRow = overlayDetails.third
+                                        BannerCard(
                                             name = item?.data?.seriesName ?: item?.name,
                                             item = item,
                                             aspectRatio =
@@ -554,9 +504,9 @@ fun HomePageContent(
                                                 } else {
                                                     AspectRatios.TALL
                                                 },
-                                            cornerText = overlayText,
-                                            cornerImageItemId = overlayLogoId,
-                                            cornerImageType = overlayImageType,
+                                            cornerText = overlayTextForRow,
+                                            cornerImageItemId = overlayLogoIdForRow,
+                                            cornerImageType = overlayImageTypeForRow,
                                             played = item?.data?.userData?.played ?: false,
                                             favorite = item?.favorite ?: false,
                                             playPercent =
