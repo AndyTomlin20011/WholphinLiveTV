@@ -471,7 +471,7 @@ fun HomePageContent(
                                                     else -> false
                                                 }
                                             }
-                                        val rowCardBadgeText =
+                                        val rowCardOverlayTextValue =
                                             remember(item, isProgramItem) {
                                                 if (isProgramItem) {
                                                     null
@@ -481,11 +481,11 @@ fun HomePageContent(
                                                             ?.data
                                                             ?.userData
                                                             ?.unplayedItemCount
-                                                              ?.takeIf { it > 0 }
-                                                              ?.let { abbreviateNumber(it) }
+                                                            ?.takeIf { it > 0 }
+                                                            ?.let { abbreviateNumber(it) }
                                                 }
                                             }
-                                        val rowCardLogoItemId =
+                                        val rowCardOverlayLogoItemId =
                                             remember(item, isProgramItem) {
                                                 if (isProgramItem) {
                                                     item?.data?.channelId
@@ -555,8 +555,8 @@ fun HomePageContent(
                                                 } else {
                                                     AspectRatios.TALL
                                                 },
-                                            cornerText = rowCardBadgeText,
-                                            cornerImageItemId = rowCardLogoItemId,
+                                            cornerText = rowCardOverlayTextValue,
+                                            cornerImageItemId = rowCardOverlayLogoItemId,
                                             cornerImageType =
                                                 if (isProgramItem) {
                                                     ImageType.PRIMARY
