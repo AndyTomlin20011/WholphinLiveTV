@@ -471,27 +471,31 @@ fun HomePageContent(
                                                     else -> false
                                                 }
                                             }
-                                        val rowCardOverlayTextValue =
+                                        val rowCardOverlay =
                                             remember(item, isProgramItem) {
-                                                if (isProgramItem) {
-                                                    null
-                                                } else {
-                                                    item?.data?.indexNumber?.let { "E$it" }
-                                                        ?: item
-                                                            ?.data
-                                                            ?.userData
-                                                            ?.unplayedItemCount
-                                                            ?.takeIf { it > 0 }
-                                                            ?.let { abbreviateNumber(it) }
-                                                }
-                                            }
-                                        val rowCardOverlayLogoItemId =
-                                            remember(item, isProgramItem) {
-                                                if (isProgramItem) {
-                                                    item?.data?.channelId
-                                                } else {
-                                                    null
-                                                }
+                                                val overlayText =
+                                                    if (isProgramItem) {
+                                                        null
+                                                    } else {
+                                                        item?.data?.indexNumber?.let { "E$it" }
+                                                            ?: item
+                                                                ?.data
+                                                                ?.userData
+                                                                ?.unplayedItemCount
+                                                                ?.takeIf { it > 0 }
+                                                                ?.let { abbreviateNumber(it) }
+                                                    }
+                                                val overlayLogoId =
+                                                    if (isProgramItem) {
+                                                        item?.data?.channelId
+                                                    } else {
+                                                        null
+                                                    }
+                                                Triple(
+                                                    overlayText,
+                                                    overlayLogoId,
+                                                    if (isProgramItem) ImageType.PRIMARY else ImageType.LOGO,
+                                                )
                                             }
                                         val rowCardOverlayLogoId =
                                             remember(item, isProgramItem) {
@@ -555,14 +559,9 @@ fun HomePageContent(
                                                 } else {
                                                     AspectRatios.TALL
                                                 },
-                                            cornerText = rowCardOverlayTextValue,
-                                            cornerImageItemId = rowCardOverlayLogoItemId,
-                                            cornerImageType =
-                                                if (isProgramItem) {
-                                                    ImageType.PRIMARY
-                                                } else {
-                                                    ImageType.LOGO
-                                                },
+                                            cornerText = rowCardOverlay.first,
+                                            cornerImageItemId = rowCardOverlay.second,
+                                            cornerImageType = rowCardOverlay.third,
                                             played = item?.data?.userData?.played ?: false,
                                             favorite = item?.favorite ?: false,
                                             playPercent =
