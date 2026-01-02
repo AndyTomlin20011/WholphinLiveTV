@@ -161,7 +161,6 @@ fun BannerCard(
                     if (cornerImageUrl.isNotNullOrBlank()) {
                         Card(
                             modifier = Modifier.size(56.dp, 32.dp),
-                            onClick = {},
                             colors =
                                 CardDefaults.colors(
                                     containerColor = AppColors.TransparentBlack50,
