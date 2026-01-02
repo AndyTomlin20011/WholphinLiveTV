@@ -103,6 +103,18 @@ data class BaseItem(
                     )
                 }
 
+                BaseItemKind.PROGRAM,
+                BaseItemKind.TV_PROGRAM,
+                BaseItemKind.LIVE_TV_PROGRAM,
+                -> {
+                    data.channelId?.let { channelId ->
+                        Destination.Playback(
+                            itemId = channelId,
+                            positionMs = 0L,
+                        )
+                    } ?: Destination.MediaItem(id, type, this)
+                }
+
                 else -> {
                     Destination.MediaItem(id, type, this)
                 }
