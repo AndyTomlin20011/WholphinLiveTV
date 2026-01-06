@@ -11,6 +11,9 @@ import com.github.damontecres.wholphin.WholphinApplication
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.preferences.AppPreferences
+import com.github.damontecres.wholphin.preferences.LiveTvPreferences
+import com.github.damontecres.wholphin.preferences.ProgramCategoryFilter
+import com.github.damontecres.wholphin.preferences.updateLiveTvPreferences
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.ui.AppColors
 import com.github.damontecres.wholphin.ui.data.RowColumn
@@ -76,6 +79,7 @@ class LiveTvViewModel
 
         private lateinit var channelsIdToIndex: Map<UUID, Int>
         private val mutex = Mutex()
+        private var liveTvPreferences: LiveTvPreferences? = null
 
         val guideTimes = MutableLiveData<List<LocalDateTime>>(buildGuideTimes())
         val channels = MutableLiveData<List<TvChannel>>()
@@ -90,11 +94,8 @@ class LiveTvViewModel
         init {
             viewModelScope.launchIO {
                 preferences.data
-                    .map {
-                        it.interfacePreferences.liveTvPreferences.let {
-                            Pair(it.sortByRecentlyWatched, it.favoriteChannelsAtBeginning)
-                        }
-                    }.distinctUntilChanged()
+                    .map { it.interfacePreferences.liveTvPreferences }
+                    .distinctUntilChanged()
                     .debounce { 500.milliseconds }
                     .collectLatest {
                         Timber.v("Init due to pref change")
@@ -116,6 +117,7 @@ class LiveTvViewModel
                 val prefs =
                     (preferences.data.firstOrNull() ?: AppPreferences.getDefaultInstance())
                         .interfacePreferences.liveTvPreferences
+                liveTvPreferences = prefs
                 val channelData by api.liveTvApi.getLiveTvChannels(
                     GetLiveTvChannelsRequest(
                         startIndex = 0,
@@ -149,18 +151,30 @@ class LiveTvViewModel
                 Timber.d("Got ${channels.size} channels")
                 channelsIdToIndex =
                     channels.withIndex().associateBy({ it.value.id }, { it.index })
-                // Initially, quickly load the first 10 channels (only some are visible immediately), then below will load more
-                // This makes the guide appear faster, and load more usable data in the background
-                val initial = 10
-                fetchPrograms(guideStart, channels, 0..<initial.coerceAtMost(channels.size))
+                if (prefs.programCategoryFilter == ProgramCategoryFilter.CATEGORY_NONE) {
+                    // Initially, quickly load the first 10 channels (only some are visible immediately), then below will load more
+                    // This makes the guide appear faster, and load more usable data in the background
+                    val initial = 10
+                    fetchPrograms(guideStart, channels, 0..<initial.coerceAtMost(channels.size))
 
-                withContext(Dispatchers.Main) {
-                    this@LiveTvViewModel.channels.value = channels
-                    loading.value = LoadingState.Success
-                }
-                // Now load the full range
-                if (channels.size > initial) {
-                    fetchPrograms(guideStart, channels, 0..<range.coerceAtMost(channels.size))
+                    withContext(Dispatchers.Main) {
+                        this@LiveTvViewModel.channels.value = channels
+                        loading.value = LoadingState.Success
+                    }
+                    // Now load the full range
+                    if (channels.size > initial) {
+                        fetchPrograms(guideStart, channels, 0..<range.coerceAtMost(channels.size))
+                    }
+                } else {
+                    fetchPrograms(
+                        guideStart,
+                        channels,
+                        channels.indices,
+                        applyChannelFilter = true,
+                    )
+                    withContext(Dispatchers.Main) {
+                        loading.value = LoadingState.Success
+                    }
                 }
             }
         }
@@ -183,7 +197,12 @@ class LiveTvViewModel
         ) {
             loading.setValueOnMain(LoadingState.Loading)
             val guideStart = guideTimes.value!!.first()
-            fetchPrograms(guideStart, channels, range)
+            fetchPrograms(
+                guideStart,
+                channels,
+                range,
+                applyChannelFilter = shouldFilterChannels(),
+            )
             loading.setValueOnMain(LoadingState.Success)
         }
 
@@ -191,6 +210,7 @@ class LiveTvViewModel
             guideStart: LocalDateTime,
             channels: List<TvChannel>,
             range: IntRange,
+            applyChannelFilter: Boolean = false,
         ) = mutex.withLock {
             val maxStartDate = guideStart.plusHours(MAX_HOURS).minusMinutes(1)
             val minEndDate = guideStart.plusMinutes(1L)
@@ -369,11 +389,21 @@ class LiveTvViewModel
                 fake.addAll(fakePrograms)
             }
 
-            programsByChannel.forEach { (channelId, programs) ->
+            val filteredProgramsByChannel = filterProgramsByPreference(programsByChannel)
+            channelProgramCount.clear()
+            filteredProgramsByChannel.forEach { (channelId, programs) ->
                 channelProgramCount[channelId] = programs.size
             }
+            val filteredChannels =
+                if (shouldFilterChannels()) {
+                    channels.filter { filteredProgramsByChannel.containsKey(it.id) }
+                } else {
+                    channels
+                }
+            channelsIdToIndex =
+                filteredChannels.withIndex().associateBy({ it.value.id }, { it.index })
             val finalProgramList =
-                (programsByChannel.values.flatten())
+                (filteredProgramsByChannel.values.flatten())
                     .sortedWith(
                         compareBy(
                             { channelsIdToIndex[it.channelId]!! },
@@ -382,8 +412,15 @@ class LiveTvViewModel
                     )
             Timber.d("Got ${fetchedPrograms.size} programs & ${finalProgramList.size} total programs")
             withContext(Dispatchers.Main) {
+                if (applyChannelFilter) {
+                    this@LiveTvViewModel.channels.value = filteredChannels
+                }
                 this@LiveTvViewModel.programs.value =
-                    FetchedPrograms(range, finalProgramList, programsByChannel)
+                    FetchedPrograms(
+                        if (shouldFilterChannels()) filteredChannels.indices else range,
+                        finalProgramList,
+                        filteredProgramsByChannel,
+                    )
             }
         }
 
@@ -465,6 +502,35 @@ class LiveTvViewModel
 
         private var focusLoadingJob: Job? = null
 
+        fun setProgramCategoryFilter(filter: ProgramCategoryFilter) {
+            val selectedFilter =
+                filter.takeUnless { it == ProgramCategoryFilter.UNRECOGNIZED }
+                    ?: ProgramCategoryFilter.CATEGORY_NONE
+            viewModelScope.launchIO {
+                val updated =
+                    preferences.updateData {
+                        it.updateLiveTvPreferences { programCategoryFilter = selectedFilter }
+                    }
+                liveTvPreferences = updated.interfacePreferences.liveTvPreferences
+
+                val currentChannels = channels.value
+                val currentRange = programs.value?.range ?: currentChannels?.indices
+                if (currentChannels != null && currentRange != null) {
+                    loading.setValueOnMain(LoadingState.Loading)
+                    val guideStart = guideTimes.value?.firstOrNull()
+                    if (guideStart != null) {
+                        fetchPrograms(
+                            guideStart = guideStart,
+                            channels = currentChannels,
+                            range = currentRange,
+                            applyChannelFilter = true,
+                        )
+                    }
+                    loading.setValueOnMain(LoadingState.Success)
+                }
+            }
+        }
+
         fun onFocusChannel(position: RowColumn) {
             channels.value?.let { channels ->
                 val fetchedRange = programs.value!!.range
@@ -505,6 +571,43 @@ class LiveTvViewModel
                         }
                 }
             }
+        }
+
+        private fun shouldFilterChannels(): Boolean {
+            val filter = (liveTvPreferences ?: defaultLiveTvPreferences).programCategoryFilter
+            return filter !in
+                setOf(ProgramCategoryFilter.CATEGORY_NONE, ProgramCategoryFilter.UNRECOGNIZED)
+        }
+
+        private val defaultLiveTvPreferences
+            get() = AppPreferences.getDefaultInstance().interfacePreferences.liveTvPreferences
+
+        private fun filterProgramsByPreference(programsByChannel: Map<UUID, List<TvProgram>>):
+            Map<UUID, List<TvProgram>> {
+            val filter = (liveTvPreferences ?: defaultLiveTvPreferences).programCategoryFilter
+            return when (filter) {
+                ProgramCategoryFilter.CATEGORY_KIDS ->
+                    filterProgramsByCategory(programsByChannel, ProgramCategory.KIDS)
+
+                ProgramCategoryFilter.CATEGORY_MOVIE ->
+                    filterProgramsByCategory(programsByChannel, ProgramCategory.MOVIE)
+
+                ProgramCategoryFilter.CATEGORY_NEWS ->
+                    filterProgramsByCategory(programsByChannel, ProgramCategory.NEWS)
+
+                ProgramCategoryFilter.CATEGORY_SPORTS ->
+                    filterProgramsByCategory(programsByChannel, ProgramCategory.SPORTS)
+
+                ProgramCategoryFilter.CATEGORY_NONE, ProgramCategoryFilter.UNRECOGNIZED ->
+                    programsByChannel
+            }
+        }
+
+        private fun filterProgramsByCategory(
+            programsByChannel: Map<UUID, List<TvProgram>>,
+            category: ProgramCategory,
+        ) = programsByChannel.filterValues { channelPrograms ->
+            channelPrograms.any { it.category == category }
         }
     }
 
