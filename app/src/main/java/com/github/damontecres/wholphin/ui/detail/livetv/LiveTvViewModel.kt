@@ -507,8 +507,26 @@ class LiveTvViewModel
                 filter.takeUnless { it == ProgramCategoryFilter.UNRECOGNIZED }
                     ?: ProgramCategoryFilter.CATEGORY_NONE
             viewModelScope.launchIO {
-                preferences.updateData {
-                    it.updateLiveTvPreferences { programCategoryFilter = selectedFilter }
+                val updated =
+                    preferences.updateData {
+                        it.updateLiveTvPreferences { programCategoryFilter = selectedFilter }
+                    }
+                liveTvPreferences = updated.interfacePreferences.liveTvPreferences
+
+                val currentChannels = channels.value
+                val currentRange = programs.value?.range ?: currentChannels?.indices
+                if (currentChannels != null && currentRange != null) {
+                    loading.setValueOnMain(LoadingState.Loading)
+                    val guideStart = guideTimes.value?.firstOrNull()
+                    if (guideStart != null) {
+                        fetchPrograms(
+                            guideStart = guideStart,
+                            channels = currentChannels,
+                            range = currentRange,
+                            applyChannelFilter = true,
+                        )
+                    }
+                    loading.setValueOnMain(LoadingState.Success)
                 }
             }
         }

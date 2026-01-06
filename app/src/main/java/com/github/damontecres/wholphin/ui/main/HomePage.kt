@@ -144,7 +144,21 @@ fun HomePage(
                 heroItems = heroItems,
                 watchingRows + sportsRows + latestRows,
                 onClickItem = { position, item ->
-                    viewModel.navigationManager.navigateTo(item.destination())
+                    if (
+                        item.type == BaseItemKind.PROGRAM ||
+                            item.type == BaseItemKind.TV_PROGRAM ||
+                            item.type == BaseItemKind.LIVE_TV_PROGRAM
+                    ) {
+                        val channelDestination =
+                            item.data.channelId?.let { channelId ->
+                                Destination.Playback(channelId, 0)
+                            }
+                        viewModel.navigationManager.navigateTo(
+                            channelDestination ?: item.destination(),
+                        )
+                    } else {
+                        viewModel.navigationManager.navigateTo(item.destination())
+                    }
                 },
                 onLongClickItem = { position, item ->
                     val dialogItems =
@@ -342,7 +356,8 @@ fun HomePageContent(
             rowFocusRequesters.getOrNull(position.row)?.tryRequestFocus()
         }
     }
-    LaunchedEffect(position, heroOffset, listState.layoutInfo.totalItemsCount) {
+    var lastScrolledRow by rememberSaveable { mutableStateOf<Int?>(null) }
+    LaunchedEffect(position.row, heroOffset, listState.layoutInfo.totalItemsCount) {
         val targetIndex =
             if (heroItems.isNotEmpty() && position.row == 0) {
                 0
@@ -350,7 +365,10 @@ fun HomePageContent(
                 position.row + heroOffset
             }
         val maxIndex = (listState.layoutInfo.totalItemsCount - 1).coerceAtLeast(0)
-        listState.animateScrollToItem(targetIndex.coerceAtMost(maxIndex))
+        if (lastScrolledRow != position.row) {
+            lastScrolledRow = position.row
+            listState.animateScrollToItem(targetIndex.coerceAtMost(maxIndex))
+        }
     }
     Box(modifier = modifier) {
         Column(modifier = Modifier.fillMaxSize()) {
